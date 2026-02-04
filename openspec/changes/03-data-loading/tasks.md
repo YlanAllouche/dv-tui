@@ -1,0 +1,13 @@
+## 1. Implementation
+- [ ] 1.1 Create `DataLoader` abstract base class
+- [ ] 1.2 Implement `JsonDataLoader` for file JSON
+- [ ] 1.3 Implement `JsonDataLoader` for inline JSON
+- [ ] 1.4 Implement `CsvDataLoader` for CSV parsing
+- [ ] 1.5 Implement `StdinDataLoader` for piped data
+- [ ] 1.6 Add configurable stdin timeout with `--stdin-timeout` flag
+- [ ] 1.7 Add `--no-stdin-timeout` flag to wait indefinitely
+- [ ] 1.8 Add support for `-c "command"` to specify refresh command
+- [ ] 1.9 Implement data validation and error handling
+- [ ] 1.10 Store original data source for refresh capability
+- [ ] 1.11 Handle missing columns by union of all object keys
+- [ ] 1.12 Ensure missing cells are empty/null

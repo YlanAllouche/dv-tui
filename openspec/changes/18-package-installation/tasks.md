@@ -1,0 +1,15 @@
+## 1. Implementation
+- [ ] 1.1 Create pyproject.toml with package name
+- [ ] 1.2 Create pyproject.toml with version
+- [ ] 1.3 Create pyproject.toml with description
+- [ ] 1.4 Create pyproject.toml with dependencies
+- [ ] 1.5 Create pyproject.toml with CLI entry point
+- [ ] 1.6 Create pyproject.toml with build configuration
+- [ ] 1.7 Add LICENSE file
+- [ ] 1.8 Create MANIFEST.in if needed
+- [ ] 1.9 Test pip install -e .
+- [ ] 1.10 Verify dv command works
+- [ ] 1.11 Add version to dv_tui/__init__.py
+- [ ] 1.12 Create CHANGELOG.md
+- [ ] 1.13 Run all tests to verify they pass
+- [ ] 1.14 Document dependencies in README

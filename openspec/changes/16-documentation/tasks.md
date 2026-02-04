@@ -1,0 +1,16 @@
+## 1. Implementation
+- [ ] 1.1 Update README.md with overview and features
+- [ ] 1.2 Update README.md with installation instructions
+- [ ] 1.3 Update README.md with CLI usage examples
+- [ ] 1.4 Update README.md with configuration reference
+- [ ] 1.5 Update README.md with library usage examples
+- [ ] 1.6 Create CONFIG.md with full configuration schema
+- [ ] 1.7 Create CONFIG.md with examples for different use cases
+- [ ] 1.8 Create KEYBINDS.md with default keybindings by mode
+- [ ] 1.9 Create KEYBINDS.md with customization instructions
+- [ ] 1.10 Create KEYBINDS.md with custom action definitions
+- [ ] 1.11 Create LIBRARY.md with Python API reference
+- [ ] 1.12 Create LIBRARY.md with example scripts
+- [ ] 1.13 Create LIBRARY.md with common patterns
+- [ ] 1.14 Add docstrings to all public functions in dv_tui module
+- [ ] 1.15 Add docstrings to TableUI class methods

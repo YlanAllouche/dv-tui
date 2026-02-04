@@ -1,0 +1,11 @@
+## 1. Implementation
+- [ ] 1.1 Implement dynamic column detection (union of all object keys)
+- [ ] 1.2 Implement column filtering via config `columns` array
+- [ ] 1.3 Implement column reordering via config `columns` array
+- [ ] 1.4 Calculate column widths dynamically based on content
+- [ ] 1.5 Preserve tab display with item counts
+- [ ] 1.6 Preserve color-coded values
+- [ ] 1.7 Preserve dynamic color cycling for enums
+- [ ] 1.8 Preserve fuzzy search mode
+- [ ] 1.9 Preserve scroll offset management
+- [ ] 1.10 Remove hardcoded assumptions about specific fields

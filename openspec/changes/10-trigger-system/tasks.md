@@ -1,0 +1,15 @@
+## 1. Implementation
+- [ ] 1.1 Define trigger schema structure
+- [ ] 1.2 Implement `TriggerExecutor` class
+- [ ] 1.3 Implement shell command execution (sync)
+- [ ] 1.4 Implement shell command execution (async)
+- [ ] 1.5 Implement environment variable passing (DV_SELECTED_CELL)
+- [ ] 1.6 Implement environment variable passing (DV_SELECTED_ROW)
+- [ ] 1.7 Implement environment variable passing (DV_SELECTED_INDEX)
+- [ ] 1.8 Implement environment variable passing (DV_SELECTED_COLUMN)
+- [ ] 1.9 Implement table-level triggers
+- [ ] 1.10 Implement row-level triggers
+- [ ] 1.11 Implement cell-level triggers
+- [ ] 1.12 Implement trigger priority (cell > row > table)
+- [ ] 1.13 Support Python function triggers for library usage
+- [ ] 1.14 Handle trigger errors gracefully

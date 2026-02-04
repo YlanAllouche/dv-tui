@@ -1,0 +1,11 @@
+## 1. Implementation
+- [ ] 1.1 Define default keybinds for normal mode
+- [ ] 1.2 Define default keybinds for search mode
+- [ ] 1.3 Define default keybinds for cell mode
+- [ ] 1.4 Implement `KeybindManager` class
+- [ ] 1.5 Implement mode switching in KeybindManager
+- [ ] 1.6 Implement keybind lookup with precedence
+- [ ] 1.7 Implement keybind unbinding at different layers
+- [ ] 1.8 Support nested keybind syntax in config
+- [ ] 1.9 Add CLI flags for adding keybinds (`--bind 'key:action'`)
+- [ ] 1.10 Add CLI flags for removing keybinds (`--unbind 'key'`)

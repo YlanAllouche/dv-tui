@@ -1,0 +1,14 @@
+## 1. Implementation
+- [ ] 1.1 Define TableUI class in __init__.py
+- [ ] 1.2 Implement TableUI constructor with data argument
+- [ ] 1.3 Implement TableUI.bind_key() method
+- [ ] 1.4 Implement TableUI.bind_trigger() method
+- [ ] 1.5 Implement TableUI.run() method
+- [ ] 1.6 Expose configuration options via constructor arguments
+- [ ] 1.7 Implement programmatic data updates
+- [ ] 1.8 Provide on_quit callback
+- [ ] 1.9 Provide on_mode_change callback
+- [ ] 1.10 Provide on_select callback
+- [ ] 1.11 Ensure CLI entry point uses core.py
+- [ ] 1.12 Document library API usage
+- [ ] 1.13 Create example scripts for library usage

@@ -1,0 +1,15 @@
+## 1. Implementation
+- [ ] 1.1 Define `Config` dataclass with all configuration options
+- [ ] 1.2 Implement config loader that reads from CLI flags, inline JSON, and defaults
+- [ ] 1.3 Implement config merger with priority rules (CLI > inline > defaults)
+- [ ] 1.4 Add CLI flags for all config options
+- [ ] 1.5 Implement `--config` flag to load external config file
+- [ ] 1.6 Implement `--help` to show available options
+- [ ] 1.7 Define JSON config schema validation
+- [ ] 1.8 Add support for columns configuration (filter/reorder columns)
+- [ ] 1.9 Add support for keybinds configuration (mode-based keybinds)
+- [ ] 1.10 Add support for triggers configuration (table/row/cell triggers)
+- [ ] 1.11 Add support for enum configuration (inline/inferred/external)
+- [ ] 1.12 Add support for drill-down configuration
+- [ ] 1.13 Add support for refresh configuration
+- [ ] 1.14 Add support for tabs configuration

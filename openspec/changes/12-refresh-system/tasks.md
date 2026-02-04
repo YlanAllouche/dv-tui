@@ -1,0 +1,12 @@
+## 1. Implementation
+- [ ] 1.1 Add refresh configuration schema
+- [ ] 1.2 Implement refresh for file input
+- [ ] 1.3 Implement refresh for stdin with command
+- [ ] 1.4 Implement refresh for stdin without command (warning)
+- [ ] 1.5 Add --refresh CLI flag
+- [ ] 1.6 Add --no-refresh CLI flag
+- [ ] 1.7 Add --refresh-interval SECONDS CLI flag
+- [ ] 1.8 Implement auto-refresh at interval
+- [ ] 1.9 Implement refresh after trigger (on_trigger)
+- [ ] 1.10 Preserve selection position after refresh
+- [ ] 1.11 Preserve scroll position after refresh

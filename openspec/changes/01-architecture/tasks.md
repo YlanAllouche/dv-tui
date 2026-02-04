@@ -1,0 +1,17 @@
+## 1. Implementation
+- [ ] 1.1 Create `dv_tui/` package directory structure
+- [ ] 1.2 Create `dv_tui/__init__.py` (exports main API)
+- [ ] 1.3 Create `dv_tui/cli.py` (command-line argument parsing, entry point)
+- [ ] 1.4 Create `dv_tui/core.py` (TUI engine, curses wrapper)
+- [ ] 1.5 Create `dv_tui/table.py` (table rendering, data management)
+- [ ] 1.6 Create `dv_tui/config.py` (configuration loading, merging)
+- [ ] 1.7 Create `dv_tui/handlers.py` (keybind handling, mode management)
+- [ ] 1.8 Create `dv_tui/actions.py` (built-in actions: scroll, select, search, etc.)
+- [ ] 1.9 Create `dv_tui/triggers.py` (trigger execution, data passing)
+- [ ] 1.10 Create `dv_tui/data_loaders.py` (JSON/CSV loading, stdin handling)
+- [ ] 1.11 Create `dv_tui/ui.py` (UI components: headers, footers, dialogs)
+- [ ] 1.12 Create `dv_tui/utils.py` (color management, fuzzy match, helpers)
+- [ ] 1.13 Create `pyproject.toml` with package metadata and entry point
+- [ ] 1.14 Add `dv` entry point in pyproject.toml
+- [ ] 1.15 Test package installation with `pip install -e .`
+- [ ] 1.16 Verify `dv` command works from installed package
