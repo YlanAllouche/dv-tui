@@ -1,0 +1,72 @@
+[
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Implement Python package architecture",
+    "file": "projects/dv-tui/IMPLEMENTATION.md",
+    "line": 10
+  },
+  {
+    "type": "work",
+    "status": "active",
+    "summary": "Review and merge pull requests",
+    "file": "projects/github/PR-123.md",
+    "line": 5
+  },
+  {
+    "type": "study",
+    "status": "focus",
+    "summary": "Learn advanced Python patterns",
+    "file": "study/python/advanced-patterns.md",
+    "line": 0
+  },
+  {
+    "type": "work",
+    "status": "2025-02-04",
+    "summary": "Design system architecture",
+    "file": "projects/system/architecture.md",
+    "line": 15
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Read documentation on curses library",
+    "file": "study/python/curses/docs.md",
+    "line": 8
+  },
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Debug memory leak issue",
+    "file": "projects/dv-tui/BUG-42.md",
+    "line": 3
+  },
+  {
+    "type": "study",
+    "status": "2025-01-28",
+    "summary": "Research async programming patterns",
+    "file": "study/python/async-patterns.md",
+    "line": 12
+  },
+  {
+    "type": "work",
+    "status": "active",
+    "summary": "Write unit tests for handlers module",
+    "file": "projects/dv-tui/tests/handlers_test.py",
+    "line": 20
+  },
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Optimize rendering performance",
+    "file": "projects/dv-tui/OPTIMIZATION.md",
+    "line": 7
+  },
+  {
+    "type": "study",
+    "status": "2025-02-01",
+    "summary": "Study functional programming concepts",
+    "file": "study/fp/concepts.md",
+    "line": 4
+  }
+]

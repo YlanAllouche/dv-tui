@@ -1,0 +1,6 @@
+- j/k don't work by default they should
+- can't qut
+- the config file? so we have one? when should it be ignored?
+- make sure to have the test data in project?
+- search doesn't work
+- what about really long files?

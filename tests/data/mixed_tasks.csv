@@ -1,0 +1,11 @@
+type,status,summary,file,line
+work,focus,Create project proposal,projects/proposal.md,1
+study,active,Research best practices,docs/best-practices.md,5
+work,2025-02-05,Team meeting notes,meetings/feb-05.md,10
+study,focus,Complete online course,courses/python-advanced.md,0
+work,active,Write documentation,docs/api.md,8
+study,2025-01-25,Read research paper,papers/ai-research.pdf,3
+work,focus,Fix critical bug,bugs/critical-123.md,2
+study,active,Watch tutorial videos,tutorials/databases.mp4,0
+work,2025-02-06,Code review session,reviews/session-5.md,7
+study,focus,Practice coding challenges,challenges/leetcode.md,12

@@ -1,0 +1,58 @@
+[
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Learn Python type hints",
+    "file": "study/python/type-hints.md",
+    "line": 0
+  },
+  {
+    "type": "study",
+    "status": "focus",
+    "summary": "Master decorators and context managers",
+    "file": "study/python/decorators.md",
+    "line": 5
+  },
+  {
+    "type": "work",
+    "status": "2025-02-03",
+    "summary": "Refactor legacy codebase",
+    "file": "projects/refactor/plan.md",
+    "line": 10
+  },
+  {
+    "type": "work",
+    "status": "active",
+    "summary": "Setup CI/CD pipeline",
+    "file": "devops/ci-cd/config.yml",
+    "line": 2
+  },
+  {
+    "type": "study",
+    "status": "focus",
+    "summary": "Explore data structures: trees and graphs",
+    "file": "study/algorithms/trees.md",
+    "line": 8
+  },
+  {
+    "type": "work",
+    "status": "2025-01-30",
+    "summary": "Database migration planning",
+    "file": "projects/database/migration.md",
+    "line": 15
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Practice TDD methodology",
+    "file": "study/testing/tdd.md",
+    "line": 3
+  },
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Implement authentication system",
+    "file": "projects/auth/implementation.md",
+    "line": 7
+  }
+]

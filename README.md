@@ -1,27 +1,23 @@
 # dv-tui
 
-Terminal UI for browsing dataview queries with neovim triggers, fuzzy search, and media playback.
-
+Terminal UI for browsing and filtering JSON/CSV data with keyboard navigation.
 
 *(Example screenshot with data from [personal-share-example](https://github.com/YlanAllouche/personal-share-example) as displayed in this [dashboard](https://ylanallouche.github.io/dashboard-md/) as well)*
 ![screenshot](./screen1.png)
 
-> 💡 **Universalization in progress:** This tool is currently idiosyncratic, but see the `initial-universalizing-effort` branch for ongoing work to generalize it for broader use cases.
+> 💡 **Universalization in progress:** This tool is being generalized for broader use cases. See the `initial-universalizing-effort` branch for ongoing work.
 
 ## Features
 
 - **Multi-tab browsing** - Load multiple JSON files as tabs
 - **Vim keybindings** - Navigate with j/k, h/l for tabs
 - **Fuzzy search** - Real-time filtering with smart character-distance scoring
-- **Neovim integration** - Opens files at specified line numbers via remote server
-- **Auto-reload** - Detects and reloads modified JSON files (if not using single-select)
-- **Media playback** - Launches `jelly_play_yt` via "locator" field (Ctrl+P or ;p)
+- **Auto-reload** - Detects and reloads modified files (if not using single-select)
 - **Color-coded display** - Dynamic color cycling for statuses; special colors for "focus", "active", and dates
 - **Type handling** - Supports string types ("work", "study") and integer durations (shown as minutes)
 - **Smart sanitization** - Cleans control characters and truncates long strings
 - **Tab indicators** - Shows item counts; search mode shows filtered vs. total count
-- **Leader key shortcuts** - Semicolon (`;`) as leader for extended commands
-- **Three display modes** - Normal, search, and single-select (`-s` flag)
+- **Multiple file formats** - Supports JSON and CSV data files
 
 ## Usage
 
@@ -42,9 +38,28 @@ bind-key e run-shell "tmux display-popup -w 90% -h 80%  -E ~/.local/bin/dv -s ~/
 ## Installation
 
 ```bash
-cp dv.py ~/.local/bin/dv # or whereever in your PATH
-
+pip install -e .
 ```
+
+## Testing
+
+Sample test data is provided in `tests/data/`:
+
+```bash
+# View test work tasks
+dv tests/data/work_tasks.json
+
+# View multiple files with tab navigation
+dv tests/data/work_tasks.json tests/data/study_tasks.json
+
+# Test CSV support
+dv tests/data/mixed_tasks.csv
+
+# Single-select mode
+dv -s tests/data/work_tasks.json
+```
+
+See `tests/data/README.md` for more testing examples.
 
 ## JSON Structure
 
@@ -56,9 +71,9 @@ Expected array of objects with optional fields:
     "type": "work",           // string or int (duration in seconds, shown as minutes)
     "status": "active",       // colors: "focus" (magenta), "active" (green), dates (yellow), or custom
     "summary": "Description", // used for search and display
-    "file": "path/to/file",   // path relative to ~/share/ for nvim
-    "line": 42,               // line number (0-indexed, displayed as line+1)
-    "locator": "url_or_id"    // passed to jelly_play_yt
+    "file": "path/to/file",   // optional: file path reference
+    "line": 42,               // optional: line number (0-indexed)
+    "locator": "url_or_id"    // optional: reference identifier
   }
 ]
 ```
@@ -71,8 +86,6 @@ Expected array of objects with optional fields:
 | `k` / `↑` | Move up |
 | `h` / `←` | Previous tab |
 | `l` / `→` | Next tab |
-| `Enter` | Open in neovim |
-| `Ctrl+P` / `;p` | Play media |
 | `/` | Enter search mode |
 | `Tab` / `↓` | Next result (search mode) |
 | `Shift+Tab` / `↑` | Previous result (search mode) |
@@ -83,4 +96,4 @@ Expected array of objects with optional fields:
 
 ## Notes
 
-Highly idiosyncratic—tailored to Dataview-based personal knowledge management. Assumes: files relative to `~/share/`, neovim with remote server at `~/.cache/nvim/share.pipe`, and `jelly_play_yt` at `~/.local/bin/`.
+Designed for browsing structured data (JSON/CSV). Optional custom actions can be configured via the `~/.config/dv/config.json` file. The tool is being actively developed for broader use cases.
