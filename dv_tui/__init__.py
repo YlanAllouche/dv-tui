@@ -8,7 +8,7 @@ __author__ = "Ylan Allouche"
 from .core import TUI
 from .table import Table
 from .config import load_config, load_config_from_inline_json, DEFAULT_CONFIG, validate_config, get_column_widths, Config
-from .data_loaders import load_file, load_json, load_csv
+from .data_loaders import load_file
 
 def main():
     """Import and run CLI main function lazily to avoid circular import."""
@@ -25,7 +25,5 @@ __all__ = [
     "get_column_widths",
     "DEFAULT_CONFIG",
     "load_file",
-    "load_json",
-    "load_csv",
     "main",
 ]

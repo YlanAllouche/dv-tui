@@ -6,7 +6,11 @@ from pathlib import Path
 from .table import Table
 from .handlers import KeyHandler, Mode
 from .config import Config, load_config, load_config_from_inline_json, get_column_widths
-from .data_loaders import load_file, get_file_mtime
+from .data_loaders import (
+    load_file, get_file_mtime,
+    DataLoader, JsonDataLoader, CsvDataLoader, StdinDataLoader,
+    create_loader, detect_source
+)
 from .ui import init_color_pairs, draw_tabs, draw_footer
 from .actions import select_item, play_locator
 from .utils import beautify_filename
@@ -15,10 +19,13 @@ from .utils import beautify_filename
 class TUI:
     """TUI engine with curses wrapper."""
     
-    def __init__(self, files: List[str], single_select: bool = False, config: Optional[Config] = None, config_path: Optional[str] = None):
+    def __init__(self, files: List[str], single_select: bool = False, config: Optional[Config] = None, 
+                 config_path: Optional[str] = None, delimiter: str = ','):
         self.files = files
         self.active_tab = 0
         self.single_select = single_select
+        self.delimiter = delimiter
+        self.tab_name = config.tab_name if config else None
         
         self.data: List[Dict[str, Any]] = []
         self.last_mtime: Optional[float] = None
@@ -27,6 +34,7 @@ class TUI:
         
         self.table: Optional[Table] = None
         self.key_handler: Optional[KeyHandler] = None
+        self.loaders: List[DataLoader] = []
         
         if config is None:
             self.config = load_config(config_path=config_path)
@@ -45,9 +53,23 @@ class TUI:
         """Get the current active file."""
         return self.files[self.active_tab]
     
+    def _init_loaders(self) -> None:
+        """Initialize data loaders for all files."""
+        stdin_timeout = self.config.stdin_timeout
+        for file_path in self.files:
+            try:
+                loader = create_loader(file_path, stdin_timeout=stdin_timeout, delimiter=self.delimiter)
+                self.loaders.append(loader)
+            except Exception as e:
+                raise Exception(f"Failed to create loader for {file_path}: {e}")
+    
     def load_data(self) -> None:
         """Load data from current file and apply inline config if present."""
-        self.data = load_file(self.current_file)
+        if not self.loaders:
+            self._init_loaders()
+        
+        loader = self.loaders[self.active_tab]
+        self.data = loader.load()
         
         inline_config = load_config_from_inline_json(self.data)
         if inline_config:
@@ -134,14 +156,18 @@ class TUI:
         
         tabs = []
         for i, file_path in enumerate(self.files):
-            beautified = beautify_filename(Path(file_path).name)
+            if self.tab_name and i == 0:
+                display_name = self.tab_name
+            else:
+                display_name = beautify_filename(Path(file_path).name)
+            
             if i == self.active_tab:
                 if self.key_handler.mode == Mode.SEARCH:
-                    tab_text = f"{beautified} - {len(self.key_handler.filtered_indices)}/{len(self.data)} items [SEARCH]"
+                    tab_text = f"{display_name} - {len(self.key_handler.filtered_indices)}/{len(self.data)} items [SEARCH]"
                 else:
-                    tab_text = f"{beautified} - {len(self.data)} items"
+                    tab_text = f"{display_name} - {len(self.data)} items"
             else:
-                tab_text = beautified
+                tab_text = display_name
             tabs.append((tab_text, i == self.active_tab))
         
         draw_tabs(self.stdscr, 0, tabs, width)

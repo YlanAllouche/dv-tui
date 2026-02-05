@@ -8,6 +8,9 @@ from typing import Dict, Any, Optional, List, Union, Literal
 CONFIG_SCHEMA = {
     "type": "object",
     "properties": {
+        "tab_name": {
+            "type": "string"
+        },
         "columns": {
             "type": "array",
             "items": {"type": "string"}
@@ -347,6 +350,8 @@ class Config:
     config_file: Optional[str] = None
     single_select: bool = False
     stdin_timeout: Optional[float] = None
+    delimiter: str = ','
+    tab_name: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -612,6 +617,12 @@ def load_config(
     
     if "tabs" in config:
         result.tabs = config["tabs"]
+    
+    if "delimiter" in config:
+        result.delimiter = config["delimiter"]
+    
+    if "tab_name" in config:
+        result.tab_name = config["tab_name"]
     
     if config_path:
         result.config_file = config_path

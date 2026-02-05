@@ -80,6 +80,20 @@ Examples:
     )
     
     parser.add_argument(
+        "--tab-name",
+        type=str,
+        default=None,
+        help="Custom name for the tab (default: filename or source type)"
+    )
+    
+    parser.add_argument(
+        "--delimiter",
+        type=str,
+        default=',',
+        help="Delimiter for CSV files (default: ',')"
+    )
+    
+    parser.add_argument(
         "--refresh",
         action="store_true",
         default=None,
@@ -139,6 +153,12 @@ def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
         if "refresh" not in cli_config:
             cli_config["refresh"] = {}
         cli_config["refresh"]["command"] = args.command
+    
+    if args.delimiter != ',':
+        cli_config["delimiter"] = args.delimiter
+    
+    if args.tab_name:
+        cli_config["tab_name"] = args.tab_name
     
     return cli_config
 
