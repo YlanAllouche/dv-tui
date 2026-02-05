@@ -245,7 +245,7 @@ class ModeKeybinds:
         "tab": 9,
         "shift_tab": 353,
     }))
-    cell: Optional[Dict[str, Any]] = None
+    cell: Dict[str, Any] = field(default_factory=lambda: KeybindConfig().to_dict())
 
 
 @dataclass
@@ -354,6 +354,8 @@ class Config:
     stdin_timeout: Optional[float] = None
     delimiter: str = ','
     tab_name: Optional[str] = None
+    binds: Optional[List[Dict[str, str]]] = None
+    unbinds: Optional[List[Dict[str, str]]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -625,6 +627,12 @@ def load_config(
     
     if "tab_name" in config:
         result.tab_name = config["tab_name"]
+    
+    if "binds" in config and config["binds"]:
+        result.binds = config["binds"]
+    
+    if "unbinds" in config and config["unbinds"]:
+        result.unbinds = config["unbinds"]
     
     if config_path:
         result.config_file = config_path

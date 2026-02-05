@@ -1,6 +1,6 @@
 import time
 import curses
-from typing import Dict, Any, List, Callable, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Any, List, Callable, Optional, Tuple, TYPE_CHECKING, Union, Set
 from enum import Enum
 
 if TYPE_CHECKING:
@@ -14,11 +14,143 @@ class Mode(Enum):
     NAVIGATE = "navigate"
 
 
+class KeybindManager:
+    """Manages mode-based keybinds with layering support."""
+    
+    def __init__(self, config: Optional["Config"] = None):
+        """Initialize KeybindManager with default keybinds and optional config."""
+        self.mode = Mode.NORMAL
+        
+        self.defaults: Dict[str, Dict[str, Any]] = {
+            "normal": {
+                "leader": ord(';'),
+                "quit": [ord('q'), ord('Q')],
+                "down": [ord('j'), ord('J'), 258],
+                "up": [ord('k'), ord('K'), 259],
+                "left": [ord('h'), ord('H'), 260],
+                "right": [ord('l'), ord('L'), 261],
+                "search": ord('/'),
+                "enter": [ord('\n'), 10],
+                "escape": 27,
+                "backspace": [263, 127],
+                "toggle_mode": ord('c'),
+            },
+            "search": {
+                "enter": [ord('\n'), 10],
+                "escape": 27,
+                "backspace": [263, 127],
+                "tab": 9,
+                "shift_tab": 353,
+            },
+            "cell": {
+                "leader": ord(';'),
+                "quit": [ord('q'), ord('Q')],
+                "down": [ord('j'), ord('J'), 258],
+                "up": [ord('k'), ord('K'), 259],
+                "left": [ord('h'), ord('H'), 260],
+                "right": [ord('l'), ord('L'), 261],
+                "search": ord('/'),
+                "enter": [ord('\n'), 10],
+                "escape": 27,
+                "backspace": [263, 127],
+                "toggle_mode": ord('c'),
+            }
+        }
+        
+        self.cli_binds: Dict[str, Dict[str, Any]] = {}
+        self.inline_binds: Dict[str, Dict[str, Any]] = {}
+        self.file_binds: Dict[str, Dict[str, Any]] = {}
+        self.unbinds: Dict[str, Set[Union[int, str]]] = {"normal": set(), "search": set(), "cell": set()}
+        
+        if config:
+            self.load_config(config)
+    
+    def load_config(self, config: "Config") -> None:
+        """Load keybind configuration from Config object."""
+        if hasattr(config, 'keybinds'):
+            keybinds = config.keybinds
+            
+            if isinstance(keybinds, dict):
+                for mode_name in ["normal", "search", "cell"]:
+                    if mode_name in keybinds and isinstance(keybinds[mode_name], dict):
+                        self.file_binds[mode_name] = keybinds[mode_name]
+                    elif mode_name == "normal" and isinstance(keybinds, dict):
+                        self.file_binds[mode_name] = keybinds
+    
+    def set_mode(self, mode: Mode) -> None:
+        """Switch to the specified mode."""
+        self.mode = mode
+    
+    def get_mode(self) -> Mode:
+        """Get current mode."""
+        return self.mode
+    
+    def add_bind(self, keybind: str, action: str, mode: str = "normal") -> None:
+        """Add a keybind at the CLI layer."""
+        key = self._parse_key(keybind)
+        if mode not in self.cli_binds:
+            self.cli_binds[mode] = {}
+        self.cli_binds[mode][action] = key
+    
+    def unbind(self, keybind: str, mode: str = "normal") -> None:
+        """Unbind a key at all layers."""
+        key = self._parse_key(keybind)
+        self.unbinds[mode].add(key)
+    
+    def _parse_key(self, keybind: str) -> Union[int, str]:
+        """Parse a keybind string to an int or keep as string."""
+        if len(keybind) == 1:
+            return ord(keybind)
+        try:
+            return int(keybind)
+        except ValueError:
+            return keybind
+    
+    def get_keybind(self, action: str) -> Union[int, List[int]]:
+        """Get keybind for an action with precedence: CLI > inline > file > defaults."""
+        mode_name = self.mode.value
+        
+        if mode_name in self.unbinds:
+            for key in self.unbinds[mode_name]:
+                keybind = self._get_action_key_from_layers(action, mode_name)
+                if key == keybind or (isinstance(keybind, list) and key in keybind):
+                    return None
+        
+        return self._get_action_key_from_layers(action, mode_name)
+    
+    def _get_action_key_from_layers(self, action: str, mode: str) -> Union[int, List[int]]:
+        """Get action key from layers in order: CLI > inline > file > defaults."""
+        for layer in [self.cli_binds, self.inline_binds, self.file_binds, self.defaults]:
+            if mode in layer and action in layer[mode]:
+                return layer[mode][action]
+        
+        return None
+    
+    def get_all_keybinds(self) -> Dict[str, Any]:
+        """Get all keybinds for current mode with full precedence applied."""
+        mode_name = self.mode.value
+        result: Dict[str, Any] = {}
+        
+        for layer in [self.defaults, self.file_binds, self.inline_binds, self.cli_binds]:
+            if mode_name in layer:
+                result.update(layer[mode_name])
+        
+        for key in self.unbinds.get(mode_name, set()):
+            result = {k: v for k, v in result.items() if v != key and not (isinstance(v, list) and key in v)}
+        
+        return result
+    
+    def is_action_bound(self, action: str) -> bool:
+        """Check if an action has a bound key."""
+        return self.get_keybind(action) is not None
+
+
 class KeyHandler:
     """Handle keybinds and mode management."""
     
     def __init__(self, config: Optional["Config"] = None):
-        self.mode = Mode.NORMAL
+        self.keybind_manager = KeybindManager(config)
+        self.mode = self.keybind_manager.get_mode()
         self.leader_pending = False
         self.leader_timeout = 0
         self.leader_key = ord(';')
@@ -30,7 +162,6 @@ class KeyHandler:
         self.pre_search_selected_index = 0
         self.pre_search_scroll_offset = 0
         
-        self.keybinds: Dict[str, Any] = {}
         self.custom_handlers: Dict[int, Callable] = {}
         
         if config:
@@ -38,67 +169,96 @@ class KeyHandler:
     
     def load_config(self, config: "Config") -> None:
         """Load keybind configuration."""
-        if hasattr(config, 'keybinds'):
-            self.keybinds = config.keybinds
+        self.keybind_manager.load_config(config)
         
-        if isinstance(self.keybinds, dict):
-            if "normal" in self.keybinds:
-                normal_keybinds = self.keybinds["normal"]
-                leader = normal_keybinds.get("leader", ord(';'))
-                self.leader_key = leader if isinstance(leader, int) else ord(leader)
-                self.keybinds = normal_keybinds
-            else:
-                leader = self.keybinds.get("leader", ord(';'))
-                self.leader_key = leader if isinstance(leader, int) else ord(leader)
+        if hasattr(config, 'binds') and config.binds:
+            for bind in config.binds:
+                key = bind.get("key")
+                action = bind.get("action")
+                mode = bind.get("mode", "normal")
+                if key and action:
+                    self.keybind_manager.add_bind(key, action, mode)
+        
+        if hasattr(config, 'unbinds') and config.unbinds:
+            for unbind in config.unbinds:
+                key = unbind.get("key")
+                mode = unbind.get("mode", "normal")
+                if key:
+                    self.keybind_manager.unbind(key, mode)
+        
+        keybinds = self.keybind_manager.get_all_keybinds()
+        leader = keybinds.get("leader", ord(';'))
+        self.leader_key = leader if isinstance(leader, int) else ord(leader)
     
     def is_quit_key(self, key: int) -> bool:
         """Check if key is a quit key."""
-        quit_keys = self.keybinds.get("quit", [ord('q'), ord('Q')])
-        return key in quit_keys
+        quit_keys = self.keybind_manager.get_keybind("quit")
+        if quit_keys is None:
+            quit_keys = [ord('q'), ord('Q')]
+        return key in (quit_keys if isinstance(quit_keys, list) else [quit_keys])
     
     def is_down_key(self, key: int) -> bool:
         """Check if key is a down key."""
-        down_keys = self.keybinds.get("down", [ord('j'), ord('J'), 258])
-        return key in down_keys
+        down_keys = self.keybind_manager.get_keybind("down")
+        if down_keys is None:
+            down_keys = [ord('j'), ord('J'), 258]
+        return key in (down_keys if isinstance(down_keys, list) else [down_keys])
     
     def is_up_key(self, key: int) -> bool:
         """Check if key is an up key."""
-        up_keys = self.keybinds.get("up", [ord('k'), ord('K'), 259])
-        return key in up_keys
+        up_keys = self.keybind_manager.get_keybind("up")
+        if up_keys is None:
+            up_keys = [ord('k'), ord('K'), 259]
+        return key in (up_keys if isinstance(up_keys, list) else [up_keys])
     
     def is_left_key(self, key: int) -> bool:
         """Check if key is a left key."""
-        left_keys = self.keybinds.get("left", [ord('h'), ord('H'), 260])
-        return key in left_keys
+        left_keys = self.keybind_manager.get_keybind("left")
+        if left_keys is None:
+            left_keys = [ord('h'), ord('H'), 260]
+        return key in (left_keys if isinstance(left_keys, list) else [left_keys])
     
     def is_right_key(self, key: int) -> bool:
         """Check if key is a right key."""
-        right_keys = self.keybinds.get("right", [ord('l'), ord('L'), 261])
-        return key in right_keys
+        right_keys = self.keybind_manager.get_keybind("right")
+        if right_keys is None:
+            right_keys = [ord('l'), ord('L'), 261]
+        return key in (right_keys if isinstance(right_keys, list) else [right_keys])
     
     def is_search_key(self, key: int) -> bool:
         """Check if key starts search mode."""
-        search_key = self.keybinds.get("search", ord('/'))
-        return key == search_key
+        search_key = self.keybind_manager.get_keybind("search")
+        if search_key is None:
+            search_key = ord('/')
+        return key == (search_key if isinstance(search_key, int) else search_key)
     
     def is_enter_key(self, key: int) -> bool:
         """Check if key is enter."""
-        enter_keys = self.keybinds.get("enter", [ord('\n'), 10])
-        return key in enter_keys
+        enter_keys = self.keybind_manager.get_keybind("enter")
+        if enter_keys is None:
+            enter_keys = [ord('\n'), 10]
+        return key in (enter_keys if isinstance(enter_keys, list) else [enter_keys])
     
     def is_escape_key(self, key: int) -> bool:
         """Check if key is escape."""
-        return key == self.keybinds.get("escape", 27)
+        escape_key = self.keybind_manager.get_keybind("escape")
+        if escape_key is None:
+            escape_key = 27
+        return key == (escape_key if isinstance(escape_key, int) else escape_key)
     
     def is_backspace_key(self, key: int) -> bool:
         """Check if key is backspace."""
-        backspace_keys = self.keybinds.get("backspace", [263, 127])
-        return key in backspace_keys
+        backspace_keys = self.keybind_manager.get_keybind("backspace")
+        if backspace_keys is None:
+            backspace_keys = [263, 127]
+        return key in (backspace_keys if isinstance(backspace_keys, list) else [backspace_keys])
     
     def is_toggle_mode_key(self, key: int) -> bool:
         """Check if key toggles selection mode."""
-        toggle_key = self.keybinds.get("toggle_mode", ord('c'))
-        return key == toggle_key
+        toggle_key = self.keybind_manager.get_keybind("toggle_mode")
+        if toggle_key is None:
+            toggle_key = ord('c')
+        return key == (toggle_key if isinstance(toggle_key, int) else toggle_key)
     
     def is_leader_key(self, key: int) -> bool:
         """Check if key is the leader key."""
@@ -206,6 +366,7 @@ class KeyHandler:
     def enter_search_mode(self, table) -> None:
         """Enter search mode."""
         self.mode = Mode.SEARCH
+        self.keybind_manager.set_mode(Mode.SEARCH)
         self.pre_search_selected_index = table.selected_index
         self.pre_search_scroll_offset = table.scroll_offset
         self.search_query = ""
@@ -218,6 +379,7 @@ class KeyHandler:
         table.selected_index = self.pre_search_selected_index
         table.scroll_offset = self.pre_search_scroll_offset
         self.mode = Mode.NORMAL
+        self.keybind_manager.set_mode(Mode.NORMAL)
         self.search_query = ""
         self.filtered_indices = []
         self.search_selected_index = 0

@@ -114,6 +114,22 @@ Examples:
         help="Auto-refresh interval in seconds (default: 1.0)"
     )
     
+    parser.add_argument(
+        "--bind",
+        type=str,
+        action="append",
+        default=None,
+        help="Add or override a keybind (format: 'key:action' or 'mode:key:action')"
+    )
+    
+    parser.add_argument(
+        "--unbind",
+        type=str,
+        action="append",
+        default=None,
+        help="Remove a keybind (format: 'key' or 'mode:key')"
+    )
+    
     return parser.parse_args(args)
 
 
@@ -159,6 +175,28 @@ def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
     
     if args.tab_name:
         cli_config["tab_name"] = args.tab_name
+    
+    if args.bind:
+        binds = []
+        for bind in args.bind:
+            parts = bind.split(":")
+            if len(parts) == 2:
+                binds.append({"key": parts[0], "action": parts[1], "mode": "normal"})
+            elif len(parts) == 3:
+                binds.append({"key": parts[1], "action": parts[2], "mode": parts[0]})
+        if binds:
+            cli_config["binds"] = binds
+    
+    if args.unbind:
+        unbinds = []
+        for unbind in args.unbind:
+            parts = unbind.split(":")
+            if len(parts) == 1:
+                unbinds.append({"key": parts[0], "mode": "normal"})
+            elif len(parts) == 2:
+                unbinds.append({"key": parts[1], "mode": parts[0]})
+        if unbinds:
+            cli_config["unbinds"] = unbinds
     
     return cli_config
 
