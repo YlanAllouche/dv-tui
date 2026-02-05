@@ -15,6 +15,8 @@ class Table:
         
         self.selected_index = 0
         self.scroll_offset = 0
+        self.selected_column = 0
+        self.selection_mode = 'row'
         
         # Column-specific color configurations
         self.field_colors = {

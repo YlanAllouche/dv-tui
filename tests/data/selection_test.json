@@ -1,0 +1,6 @@
+[
+    {"name": "Fix login bug", "status": "done", "priority": "high", "file": "tests/test_table.py", "line": 10},
+    {"name": "Add CSV support", "status": "pending", "priority": "medium", "file": "tests/test_data_loaders.py", "line": 20},
+    {"name": "Update docs", "status": "in_progress", "priority": "low", "file": "README.md", "line": 1},
+    {"name": "Refactor config", "status": "pending", "priority": "high", "file": "dv_tui/config.py", "line": 50}
+]

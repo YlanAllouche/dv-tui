@@ -214,7 +214,7 @@ class TUI:
                 is_selected = (item_index == self.table.selected_index)
             
             x = 0
-            for col, col_width in zip(self.table.columns, column_widths):
+            for col_idx, (col, col_width) in enumerate(zip(self.table.columns, column_widths)):
                 value = item.get(col, "")
                 
                 if col == "type" and isinstance(value, int):
@@ -224,7 +224,17 @@ class TUI:
                     from .utils import sanitize_display_string
                     display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
                 
-                if is_selected:
+                is_cell_selected = (self.table.selection_mode == 'cell' and 
+                                    is_selected and 
+                                    col_idx == self.table.selected_column)
+                
+                if is_selected and self.table.selection_mode == 'row':
+                    full_line = display_str + " "
+                    try:
+                        self.stdscr.addstr(y, x, full_line, curses.A_REVERSE)
+                    except curses.error:
+                        pass
+                elif is_cell_selected:
                     full_line = display_str + " "
                     try:
                         self.stdscr.addstr(y, x, full_line, curses.A_REVERSE)
@@ -251,10 +261,16 @@ class TUI:
         footer_y = height - 1
         if self.key_handler.mode == Mode.SEARCH:
             keybind_hints = "Type to filter | Tab/S-Tab navigate | ESC exit search | Enter select"
-        elif len(self.files) > 1:
-            keybind_hints = "j/↓ down | k/↑ up | h/← prev tab | l/→ next tab | / search | q quit"
+        elif self.table.selection_mode == 'cell':
+            if len(self.files) > 1:
+                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter select cell | c: row mode | / search | q quit"
+            else:
+                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter select cell | c: row mode | / search | q quit"
         else:
-            keybind_hints = "j/↓ down | k/↑ up | / search | q quit"
+            if len(self.files) > 1:
+                keybind_hints = "j/↓ down | k/↑ up | h/← prev tab | l/→ next tab | Enter select row | c: cell mode | / search | q quit"
+            else:
+                keybind_hints = "j/↓ down | k/↑ up | Enter select row | c: cell mode | / search | q quit"
         draw_footer(self.stdscr, footer_y, keybind_hints, width)
     
     def run(self, stdscr) -> None:
@@ -280,9 +296,9 @@ class TUI:
                 self.key_handler.update_leader_timeout()
                 continue
             
-            if self.key_handler.is_left_key(key):
+            if self.key_handler.is_left_key(key) and self.table.selection_mode != 'cell':
                 self.tab_left()
-            elif self.key_handler.is_right_key(key):
+            elif self.key_handler.is_right_key(key) and self.table.selection_mode != 'cell':
                 self.tab_right()
             else:
                 should_exit, selected_item = self.key_handler.handle_key(key, self.table, self.terminal_height)
@@ -291,7 +307,10 @@ class TUI:
                     break
                 
                 if selected_item and self.key_handler.mode == Mode.NORMAL:
-                    should_exit = select_item(selected_item, self.single_select)
+                    item_to_select = selected_item
+                    if isinstance(selected_item, dict) and "item" in selected_item:
+                        item_to_select = selected_item["item"]
+                    should_exit = select_item(item_to_select, self.single_select)
                     if should_exit:
                         break
         

@@ -35,6 +35,7 @@ CONFIG_SCHEMA = {
                         "enter": {"type": "array", "items": {"type": ["integer", "string"]}},
                         "escape": {"type": ["integer", "string"]},
                         "backspace": {"type": "array", "items": {"type": ["integer", "string"]}},
+                        "toggle_mode": {"type": ["integer", "string"]},
                     }
                 },
                 "search": {
@@ -229,6 +230,7 @@ class KeybindConfig:
             "enter": [ord('\n'), 10],
             "escape": 27,
             "backspace": [263, 127],
+            "toggle_mode": ord('c'),
         }
 
 

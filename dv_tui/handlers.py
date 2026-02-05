@@ -95,6 +95,11 @@ class KeyHandler:
         backspace_keys = self.keybinds.get("backspace", [263, 127])
         return key in backspace_keys
     
+    def is_toggle_mode_key(self, key: int) -> bool:
+        """Check if key toggles selection mode."""
+        toggle_key = self.keybinds.get("toggle_mode", ord('c'))
+        return key == toggle_key
+    
     def is_leader_key(self, key: int) -> bool:
         """Check if key is the leader key."""
         return key == self.leader_key
@@ -129,11 +134,33 @@ class KeyHandler:
             self.enter_search_mode(table)
             return False, None
         
+        if self.is_toggle_mode_key(key):
+            if table.selection_mode == 'row':
+                table.selection_mode = 'cell'
+                table.selected_column = 0
+            else:
+                table.selection_mode = 'row'
+        
         if self.is_down_key(key):
             table.scroll_down()
         elif self.is_up_key(key):
             table.scroll_up()
+        elif self.is_left_key(key):
+            if table.selection_mode == 'cell':
+                table.selected_column = max(0, table.selected_column - 1)
+        elif self.is_right_key(key):
+            if table.selection_mode == 'cell':
+                table.selected_column = min(len(table.columns) - 1, table.selected_column + 1)
         elif self.is_enter_key(key):
+            if table.selection_mode == 'cell':
+                cell_value = table.data[table.selected_index].get(table.columns[table.selected_column])
+                return False, {
+                    "value": cell_value,
+                    "row": table.selected_index,
+                    "column": table.columns[table.selected_column],
+                    "column_index": table.selected_column,
+                    "item": table.selected_item
+                }
             return False, table.selected_item
         elif self.is_leader_key(key):
             self.leader_pending = True
