@@ -1,30 +1,50 @@
 import curses
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Callable, Optional, Union
 from .utils import sanitize_display_string, Colors
 
 
 class Table:
     """Table rendering and data management."""
     
-    def __init__(self, data: List[Dict[str, Any]], columns: List[str]):
+    def __init__(self, data: List[Dict[str, Any]], columns: Optional[List[str]] = None):
         self.data = data
-        self.columns = columns
-        self.selected_index = 0
-        self.scroll_offset = 0
         
         self.value_color_map = {}
         self.available_color_pairs = [9, 10, 11, 12]
         self.next_color_idx = 0
         
-        self.type_colors = {
+        self.selected_index = 0
+        self.scroll_offset = 0
+        
+        # Column-specific color configurations
+        self.field_colors = {
             "work": (5, True),
             "study": (6, True),
         }
         
-        self.status_colors = {
+        self.field_status_colors = {
             "focus": (2, True),
             "active": (3, True),
         }
+        
+        # Detect or use provided columns
+        self.columns = self._detect_columns(data, columns)
+    
+    def _detect_columns(self, data: List[Dict[str, Any]], columns: Optional[List[str]] = None) -> List[str]:
+        """Detect columns from data or use provided column list for filtering/reordering."""
+        all_columns = set()
+        for item in data:
+            all_columns.update(item.keys())
+        
+        detected = sorted(all_columns)
+        
+        if columns is None:
+            return detected
+        else:
+            # Filter: only include columns that exist in the data
+            filtered = [col for col in columns if col in detected]
+            # If filter removes all columns, fall back to detected columns
+            return filtered if filtered else detected
     
     @property
     def row_count(self) -> int:
@@ -46,23 +66,37 @@ class Table:
         """Scroll up one row."""
         self.selected_index = max(0, self.selected_index - 1)
     
-    def get_type_color(self, type_val: Any) -> int:
-        """Get color for type column."""
-        if isinstance(type_val, int):
+    def get_field_color(self, field_name: str, value: Any) -> int:
+        """Get color for a specific field based on configured rules."""
+        if isinstance(value, int):
             return curses.color_pair(1)
         
-        type_lower = str(type_val).lower()
-        if type_lower in self.type_colors:
-            pair_num, bold = self.type_colors[type_lower]
+        val_lower = str(value).lower()
+        key = (field_name, val_lower)
+        
+        if key in self.field_colors:
+            pair_num, bold = self.field_colors[key]
             return curses.color_pair(pair_num) | (curses.A_BOLD if bold else 0)
+        
+        if field_name == "status" and val_lower in self.field_status_colors:
+            pair_num, bold = self.field_status_colors[val_lower]
+            return curses.color_pair(pair_num) | (curses.A_BOLD if bold else 0)
+        
+        if field_name == "status" and "2025-" in str(value):
+            return curses.color_pair(4)
+        
         return curses.color_pair(1)
     
+    def get_type_color(self, type_val: Any) -> int:
+        """Get color for type column (legacy compatibility)."""
+        return self.get_field_color("type", type_val)
+    
     def get_status_color(self, status: str) -> int:
-        """Get color for status column."""
+        """Get color for status column (legacy compatibility)."""
         status_lower = str(status).lower()
         
-        if status_lower in self.status_colors:
-            pair_num, bold = self.status_colors[status_lower]
+        if status_lower in self.field_status_colors:
+            pair_num, bold = self.field_status_colors[status_lower]
             return curses.color_pair(pair_num) | (curses.A_BOLD if bold else 0)
         
         if "2025-" in str(status):
@@ -82,7 +116,57 @@ class Table:
         pair_num = self.value_color_map[key]
         return curses.color_pair(pair_num) | curses.A_BOLD
     
-    def render(self, stdscr, start_y: int, height: int, width: int, 
+    def calculate_column_widths(self, headers: List[str], available_width: int) -> List[int]:
+        """Calculate column widths based on content and available space."""
+        num_cols = len(self.columns)
+        if num_cols == 0:
+            return []
+        
+        # Minimum width per column (for small displays)
+        min_width = 8
+        spacing = 1  # Space between columns
+        total_spacing = (num_cols - 1) * spacing
+        
+        # Calculate maximum needed width for each column
+        max_widths = []
+        for col in self.columns:
+            header_len = len(col)
+            max_content_len = header_len
+            
+            for item in self.data:
+                value = item.get(col, "")
+                if isinstance(value, int) and col == "type":
+                    # Duration in seconds, convert to minutes display
+                    display_val = f"{round(value / 60)}m"
+                else:
+                    display_val = sanitize_display_string(str(value))
+                
+                max_content_len = max(max_content_len, len(display_val))
+            
+            max_widths.append(max(max_content_len, min_width))
+        
+        # Calculate proportional widths
+        total_max = sum(max_widths)
+        if total_max + total_spacing <= available_width:
+            # All columns fit, use max widths
+            return max_widths
+        
+        # Distribute available space proportionally
+        widths = []
+        remaining_width = available_width - total_spacing
+        
+        for i, max_w in enumerate(max_widths):
+            if i == num_cols - 1:
+                # Last column gets remaining space
+                widths.append(max(remaining_width, min_width))
+            else:
+                prop_width = int((max_w / total_max) * remaining_width)
+                widths.append(max(prop_width, min_width))
+                remaining_width -= widths[i]
+        
+        return widths
+    
+    def render(self, stdscr, start_y: int, height: int, width: int,
                headers: List[str], column_widths: List[int]) -> None:
         """
         Render the table to the curses window.
@@ -115,7 +199,7 @@ class Table:
             for i, (col, col_width) in enumerate(zip(self.columns, column_widths)):
                 value = item.get(col, "")
                 
-                if col == "type" and isinstance(value, int):
+                if isinstance(value, int) and col == "type":
                     minutes = round(value / 60)
                     display_str = f"{minutes}m".ljust(col_width)
                 else:
@@ -123,11 +207,13 @@ class Table:
                 
                 color = curses.A_NORMAL
                 if col == "type":
-                    color = self.get_type_color(value)
+                    color = self.get_field_color(col, value)
                 elif col == "status":
-                    color = self.get_status_color(value)
-                    if color == curses.A_NORMAL:
-                        color = self.get_dynamic_color("status", str(value))
+                    status_color = self.get_status_color(value)
+                    if status_color == curses.A_NORMAL:
+                        color = self.get_dynamic_color(col, str(value))
+                    else:
+                        color = status_color
                 
                 try:
                     stdscr.addstr(y, x, display_str, color)
@@ -136,7 +222,7 @@ class Table:
                 
                 x += col_width + 1
     
-    def render_headers(self, stdscr, y: int, headers: List[str], 
+    def render_headers(self, stdscr, y: int, headers: List[str],
                       column_widths: List[int], header_colors: List[int]) -> None:
         """Render column headers."""
         x = 0

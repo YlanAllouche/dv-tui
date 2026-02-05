@@ -1,0 +1,6 @@
+[
+    {"first_name": "Alice", "last_name": "Smith", "age": 30, "role": "Developer"},
+    {"first_name": "Bob", "last_name": "Jones", "age": 25, "role": "Designer"},
+    {"first_name": "Charlie", "age": 35, "role": "Manager"},
+    {"first_name": "Diana", "last_name": "Williams", "role": "Developer"}
+]
