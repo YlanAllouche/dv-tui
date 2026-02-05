@@ -1,0 +1,16 @@
+[
+  {
+    "_config": {
+      "refresh": {
+        "enabled": true,
+        "on_trigger": true,
+        "interval": 1.0,
+        "command": "cat tests/data/test_inline_refresh.json"
+      }
+    },
+    "type": "work",
+    "status": "active",
+    "summary": "Test refresh configuration",
+    "last_updated": "2025-02-04T10:00:00"
+  }
+]

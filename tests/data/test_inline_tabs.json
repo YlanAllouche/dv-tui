@@ -1,0 +1,13 @@
+[
+  {
+    "_config": {
+      "tabs": ["tests/data/work_tasks.json", "tests/data/study_tasks.json"],
+      "columns": ["type", "status", "summary"]
+    }
+  },
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "This row should be ignored, tabs should load external files"
+  }
+]

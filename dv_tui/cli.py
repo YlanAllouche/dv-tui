@@ -1,38 +1,146 @@
 import sys
+import argparse
 import curses
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from .core import TUI
 from .utils import beautify_filename
+from .config import load_config, load_config_from_inline_json
+from .data_loaders import load_file
 
 
-def parse_args(args: Optional[List[str]] = None) -> tuple[bool, List[str]]:
+def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     """
     Parse command line arguments.
     
     Returns:
-        (single_select, files)
+        argparse.Namespace with parsed arguments
     """
-    if args is None:
-        args = sys.argv[1:]
+    parser = argparse.ArgumentParser(
+        prog="dv",
+        description="A curses-based TUI for viewing JSON/CSV data",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  dv file.json                    # View JSON file
+  dv file1.json file2.json        # Multiple files as tabs
+  dv -s file.json                 # Single-select mode
+  dv --config myconfig.json       # Use custom config
+  dv --columns "name,status"       # Filter columns
+  dv --stdin-timeout 60           # Read from stdin with 60s timeout
+  dv -c "query.sh"                 # Use command for data (with refresh)
+        """
+    )
     
-    single_select = False
-    files = []
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="JSON/CSV files to view (if no files, prompt from ~/share/_tmp/)"
+    )
     
-    i = 0
-    while i < len(args):
-        arg = args[i]
+    parser.add_argument(
+        "-s", "--single-select",
+        action="store_true",
+        help="Exit after selecting an item"
+    )
+    
+    parser.add_argument(
+        "-c", "--command",
+        type=str,
+        default=None,
+        help="Command to generate data (used for refresh)"
+    )
+    
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Path to external config file (default: ~/.config/dv/config.json)"
+    )
+    
+    parser.add_argument(
+        "--columns",
+        type=str,
+        default=None,
+        help="Comma-separated list of columns to display (e.g., 'type,status')"
+    )
+    
+    parser.add_argument(
+        "--stdin-timeout",
+        type=float,
+        default=None,
+        help="Timeout for stdin input in seconds (default: 30, use 0 for no timeout)"
+    )
+    
+    parser.add_argument(
+        "--no-stdin-timeout",
+        action="store_true",
+        help="Wait indefinitely for stdin input"
+    )
+    
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        default=None,
+        help="Enable auto-refresh"
+    )
+    
+    parser.add_argument(
+        "--no-refresh",
+        action="store_true",
+        dest="no_refresh",
+        help="Disable auto-refresh"
+    )
+    
+    parser.add_argument(
+        "--refresh-interval",
+        type=float,
+        default=None,
+        help="Auto-refresh interval in seconds (default: 1.0)"
+    )
+    
+    return parser.parse_args(args)
+
+
+def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
+    """
+    Convert CLI arguments to config dictionary.
+    
+    Args:
+        args: Parsed CLI arguments
         
-        if arg == '-s' or arg == '--single-select':
-            single_select = True
-        elif arg.startswith('-'):
-            i += 1
-        else:
-            files.append(arg)
-        i += 1
+    Returns:
+        Config dictionary for merging
+    """
+    cli_config = {}
     
-    return single_select, files
+    if args.columns:
+        cli_config["columns"] = [c.strip() for c in args.columns.split(",")]
+    
+    if args.stdin_timeout is not None:
+        cli_config["stdin_timeout"] = args.stdin_timeout
+    elif args.no_stdin_timeout:
+        cli_config["stdin_timeout"] = 0
+    
+    refresh_config = {}
+    if args.refresh:
+        refresh_config["enabled"] = True
+    elif args.no_refresh:
+        refresh_config["enabled"] = False
+    
+    if args.refresh_interval is not None:
+        refresh_config["interval"] = args.refresh_interval
+    
+    if refresh_config:
+        cli_config["refresh"] = refresh_config
+    
+    if args.command:
+        if "refresh" not in cli_config:
+            cli_config["refresh"] = {}
+        cli_config["refresh"]["command"] = args.command
+    
+    return cli_config
 
 
 def select_file_interactive() -> Optional[str]:
@@ -98,10 +206,47 @@ def main(args: Optional[List[str]] = None) -> int:
     """
     Main entry point.
     
+    Args:
+        args: Command line arguments (defaults to sys.argv[1:])
+    
     Returns:
         Exit code
     """
-    single_select, files = parse_args(args)
+    parsed_args = parse_args(args)
+    
+    cli_config = get_cli_config(parsed_args)
+    
+    # Load inline config from first file and validate it before TUI creation
+    inline_config = {}
+    files = parsed_args.files
+    
+    if not files:
+        selected_file = select_file_interactive()
+        if selected_file is None:
+            return 0
+        files = [selected_file]
+    else:
+        # Load and validate inline config from first file
+        try:
+            data = load_file(files[0])
+            from .config import load_config_from_inline_json
+            inline_config = load_config_from_inline_json(data)
+        except Exception as e:
+            print(f"Error: {e}")
+            return 1
+    
+    config = load_config(
+        config_path=parsed_args.config,
+        inline_config=inline_config,
+        cli_config=cli_config,
+    )
+    
+    config.single_select = parsed_args.single_select
+    
+    if parsed_args.stdin_timeout is not None:
+        config.stdin_timeout = parsed_args.stdin_timeout
+    
+    files = parsed_args.files
     
     if not files:
         selected_file = select_file_interactive()
@@ -110,7 +255,7 @@ def main(args: Optional[List[str]] = None) -> int:
         files = [selected_file]
     
     try:
-        tui = TUI(files, single_select)
+        tui = TUI(files, single_select=config.single_select, config=config)
         curses.wrapper(tui.run)
         return 0
     except Exception as e:

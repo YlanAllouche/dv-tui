@@ -1,0 +1,29 @@
+[
+  {
+    "_config": {
+      "drill_down": {
+        "enabled": true,
+        "field": "items",
+        "inherit_flags": true,
+        "extra_flags": ["--filtered"],
+        "new_tab": false
+      }
+    },
+    "type": "project",
+    "status": "active",
+    "summary": "Project with drill-down capability",
+    "items": [
+      {"name": "Task 1", "status": "done"},
+      {"name": "Task 2", "status": "pending"},
+      {"name": "Task 3", "status": "in_progress"}
+    ]
+  },
+  {
+    "type": "project",
+    "status": "focus",
+    "summary": "Another drill-down test",
+    "items": [
+      {"name": "Subtask A", "status": "active"}
+    ]
+  }
+]

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .table import Table
 from .handlers import KeyHandler, Mode
-from .config import load_config, get_column_widths
+from .config import Config, load_config, load_config_from_inline_json, get_column_widths
 from .data_loaders import load_file, get_file_mtime
 from .ui import init_color_pairs, draw_tabs, draw_footer
 from .actions import select_item, play_locator
@@ -15,7 +15,7 @@ from .utils import beautify_filename
 class TUI:
     """TUI engine with curses wrapper."""
     
-    def __init__(self, files: List[str], single_select: bool = False, config_path: Optional[str] = None):
+    def __init__(self, files: List[str], single_select: bool = False, config: Optional[Config] = None, config_path: Optional[str] = None):
         self.files = files
         self.active_tab = 0
         self.single_select = single_select
@@ -28,7 +28,11 @@ class TUI:
         self.table: Optional[Table] = None
         self.key_handler: Optional[KeyHandler] = None
         
-        self.config = load_config(config_path)
+        if config is None:
+            self.config = load_config(config_path=config_path)
+        else:
+            self.config = config
+        
         self.terminal_height = 0
         self.stdscr = None
         
@@ -42,11 +46,20 @@ class TUI:
         return self.files[self.active_tab]
     
     def load_data(self) -> None:
-        """Load data from current file."""
+        """Load data from current file and apply inline config if present."""
         self.data = load_file(self.current_file)
+        
+        inline_config = load_config_from_inline_json(self.data)
+        if inline_config:
+            self.config = load_config(
+                config_path=self.config.config_file,
+                inline_config=inline_config,
+                cli_config={},
+            )
+        
         self.last_mtime = get_file_mtime(self.current_file)
         
-        columns = self.config.get("columns", ["type", "status", "summary"])
+        columns = self.config.columns
         self.table = Table(self.data, columns)
     
     def check_and_reload(self) -> bool:
@@ -115,8 +128,8 @@ class TUI:
         viewport_height = height - 4
         start_y = 2
         
-        columns = self.config.get("columns", ["type", "status", "summary"])
-        headers = ["Type", "Status", "Summary"]
+        columns = self.config.columns
+        headers = [c.capitalize() for c in columns]
         column_widths = get_column_widths(self.config, width)
         
         tabs = []

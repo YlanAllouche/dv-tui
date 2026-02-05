@@ -1,7 +1,10 @@
 import time
 import curses
-from typing import Dict, Any, List, Callable, Optional, Tuple
+from typing import Dict, Any, List, Callable, Optional, Tuple, TYPE_CHECKING
 from enum import Enum
+
+if TYPE_CHECKING:
+    from .config import Config
 
 
 class Mode(Enum):
@@ -14,7 +17,7 @@ class Mode(Enum):
 class KeyHandler:
     """Handle keybinds and mode management."""
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional["Config"] = None):
         self.mode = Mode.NORMAL
         self.leader_pending = False
         self.leader_timeout = 0
@@ -33,37 +36,44 @@ class KeyHandler:
         if config:
             self.load_config(config)
     
-    def load_config(self, config: Dict[str, Any]) -> None:
+    def load_config(self, config: "Config") -> None:
         """Load keybind configuration."""
-        keybinds = config.get("keybinds", {})
+        if hasattr(config, 'keybinds'):
+            self.keybinds = config.keybinds
         
-        leader = keybinds.get("leader", ord(';'))
-        self.leader_key = leader if isinstance(leader, int) else ord(leader)
-        self.keybinds = keybinds
+        if isinstance(self.keybinds, dict):
+            if "normal" in self.keybinds:
+                normal_keybinds = self.keybinds["normal"]
+                leader = normal_keybinds.get("leader", ord(';'))
+                self.leader_key = leader if isinstance(leader, int) else ord(leader)
+                self.keybinds = normal_keybinds
+            else:
+                leader = self.keybinds.get("leader", ord(';'))
+                self.leader_key = leader if isinstance(leader, int) else ord(leader)
     
     def is_quit_key(self, key: int) -> bool:
         """Check if key is a quit key."""
-        quit_keys = self.keybinds.get("quit", ["q", "Q"])
+        quit_keys = self.keybinds.get("quit", [ord('q'), ord('Q')])
         return key in quit_keys
     
     def is_down_key(self, key: int) -> bool:
         """Check if key is a down key."""
-        down_keys = self.keybinds.get("down", ["j", "J", curses.KEY_DOWN])
+        down_keys = self.keybinds.get("down", [ord('j'), ord('J'), 258])
         return key in down_keys
     
     def is_up_key(self, key: int) -> bool:
         """Check if key is an up key."""
-        up_keys = self.keybinds.get("up", ["k", "K", curses.KEY_UP])
+        up_keys = self.keybinds.get("up", [ord('k'), ord('K'), 259])
         return key in up_keys
     
     def is_left_key(self, key: int) -> bool:
         """Check if key is a left key."""
-        left_keys = self.keybinds.get("left", ["h", "H", curses.KEY_LEFT])
+        left_keys = self.keybinds.get("left", [ord('h'), ord('H'), 260])
         return key in left_keys
     
     def is_right_key(self, key: int) -> bool:
         """Check if key is a right key."""
-        right_keys = self.keybinds.get("right", ["l", "L", curses.KEY_RIGHT])
+        right_keys = self.keybinds.get("right", [ord('l'), ord('L'), 261])
         return key in right_keys
     
     def is_search_key(self, key: int) -> bool:
@@ -82,7 +92,7 @@ class KeyHandler:
     
     def is_backspace_key(self, key: int) -> bool:
         """Check if key is backspace."""
-        backspace_keys = self.keybinds.get("backspace", [curses.KEY_BACKSPACE, 127])
+        backspace_keys = self.keybinds.get("backspace", [263, 127])
         return key in backspace_keys
     
     def is_leader_key(self, key: int) -> bool:

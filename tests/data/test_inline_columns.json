@@ -1,0 +1,16 @@
+[
+  {
+    "_config": {
+      "columns": ["type", "summary"],
+      "column_widths": {"type": 10}
+    },
+    "type": "work",
+    "status": "focus",
+    "summary": "Inline columns config test - should show only type and summary"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "This status column should not be displayed"
+  }
+]

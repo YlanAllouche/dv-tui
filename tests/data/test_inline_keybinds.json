@@ -1,0 +1,21 @@
+[
+  {
+    "_config": {
+      "keybinds": {
+        "normal": {
+          "leader": 59,
+          "down": [106, 258],
+          "up": [107, 259]
+        }
+      }
+    },
+    "type": "work",
+    "status": "focus",
+    "summary": "Test custom keybinds - leader is ;, down is j or ↓, up is k or ↑"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Keybinds should be loaded from inline config"
+  }
+]

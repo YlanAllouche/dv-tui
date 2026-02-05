@@ -33,7 +33,7 @@ def test_config():
     print("\nTesting configuration...")
     config = load_config()
     
-    keybinds = config['keybinds']
+    keybinds = config.keybinds
     
     tests = [
         ('quit', [113, 81], "q/Q"),
