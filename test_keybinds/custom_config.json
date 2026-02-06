@@ -1,0 +1,17 @@
+{
+  "keybinds": {
+    "normal": {
+      "leader": ",",
+      "down": ["n", "j"],
+      "up": ["p", "k"],
+      "quit": ["Q", "q"],
+      "search": "f"
+    },
+    "search": {
+      "enter": [10, 13],
+      "escape": "q",
+      "backspace": [263, 127]
+    }
+  },
+  "columns": ["type", "status", "summary", "priority"]
+}
