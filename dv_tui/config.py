@@ -339,7 +339,7 @@ class RefreshConfig:
 class Config:
     """Main configuration dataclass."""
     
-    columns: List[str] = field(default_factory=lambda: ["type", "status", "summary"])
+    columns: Optional[List[str]] = None
     column_widths: Dict[str, int] = field(default_factory=lambda: ColumnWidthsConfig().to_dict())
     keybinds: Dict[str, Any] = field(default_factory=lambda: ModeKeybinds().normal)
     colors: Dict[str, Any] = field(default_factory=lambda: ColorsConfig().to_dict())
@@ -524,7 +524,7 @@ def load_config(
     
     result = Config()
     
-    if "columns" in config:
+    if "columns" in config and config["columns"] != ["type", "status", "summary"]:
         result.columns = config["columns"]
     
     if "column_widths" in config:
@@ -647,6 +647,10 @@ def get_column_widths(config: Config, terminal_width: int) -> List[int]:
     """
     columns = config.columns
     column_widths = config.column_widths
+    
+    # Handle case when columns is None (auto-detect mode)
+    if columns is None:
+        return []
     
     widths = []
     remaining_width = terminal_width - (len(columns) - 1) - 2

@@ -202,63 +202,7 @@ def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
     return cli_config
 
 
-def select_file_interactive() -> Optional[str]:
-    """Interactive file selection from ~/share/_tmp/."""
-    tmp_dir = Path.home() / "share" / "_tmp"
-    
-    if not tmp_dir.exists():
-        print(f"Directory {tmp_dir} not found")
-        return None
-    
-    json_files = list(tmp_dir.glob("*.json"))
-    if not json_files:
-        print("No JSON files found in ~/share/_tmp/")
-        return None
-    
-    def select_file(stdscr):
-        selected = 0
-        curses.curs_set(0)
-        stdscr.keypad(True)
-        
-        while True:
-            stdscr.clear()
-            height, width = stdscr.getmaxyx()
-            
-            title = f"{len(json_files)} files in ~/share/_tmp/"
-            try:
-                stdscr.addstr(0, 0, title, curses.A_BOLD)
-            except curses.error:
-                pass
-            
-            visible_items = min(len(json_files), height - 3)
-            for i in range(visible_items):
-                if i >= len(json_files):
-                    break
-                
-                beautified = beautify_filename(json_files[i].name)
-                line_text = beautified
-                
-                try:
-                    if i == selected:
-                        stdscr.addstr(i + 2, 2, line_text, curses.A_REVERSE)
-                    else:
-                        stdscr.addstr(i + 2, 2, line_text)
-                except curses.error:
-                    pass
-            
-            key = stdscr.getch()
-            
-            if key == ord('q') or key == ord('Q'):
-                return None
-            elif key == curses.KEY_UP or key == ord('k'):
-                selected = max(0, selected - 1)
-            elif key == curses.KEY_DOWN or key == ord('j'):
-                selected = min(len(json_files) - 1, selected + 1)
-            elif key == ord('\n') or key == curses.KEY_ENTER or key == 10:
-                return str(json_files[selected])
-    
-    selected_file = curses.wrapper(select_file)
-    return selected_file
+
 
 
 def main(args: Optional[List[str]] = None) -> int:
@@ -280,19 +224,18 @@ def main(args: Optional[List[str]] = None) -> int:
     files = parsed_args.files
     
     if not files:
-        selected_file = select_file_interactive()
-        if selected_file is None:
-            return 0
-        files = [selected_file]
-    else:
-        # Load and validate inline config from first file
-        try:
-            data = load_file(files[0])
-            from .config import load_config_from_inline_json
-            inline_config = load_config_from_inline_json(data)
-        except Exception as e:
-            print(f"Error: {e}")
-            return 1
+        print("Error: No input file provided", file=sys.stderr)
+        print("Usage: dv <file.json>", file=sys.stderr)
+        return 1
+    
+    # Load and validate inline config from first file
+    try:
+        data = load_file(files[0])
+        from .config import load_config_from_inline_json
+        inline_config = load_config_from_inline_json(data)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
     
     config = load_config(
         config_path=parsed_args.config,
@@ -305,24 +248,75 @@ def main(args: Optional[List[str]] = None) -> int:
     if parsed_args.stdin_timeout is not None:
         config.stdin_timeout = parsed_args.stdin_timeout
     
-    files = parsed_args.files
-    
-    if not files:
-        selected_file = select_file_interactive()
-        if selected_file is None:
-            return 0
-        files = [selected_file]
-    
     try:
         tui = TUI(files, single_select=config.single_select, config=config)
-        selected_output = curses.wrapper(tui.run)
-        if selected_output is not None:
-            json.dump(selected_output, sys.stdout, indent=2)
-            sys.stdout.write('\n')
-            sys.stdout.flush()
+        
+        # For single_select mode, create a temp file for output
+        # This bypasses curses stdout interference
+        output_file = None
+        if config.single_select:
+            import tempfile
+            output_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+            tui.output_file = output_file.name
+            output_file.close()
+        
+        # Manually initialize and run curses
+        def run_tui(stdscr):
+            try:
+                return tui.run(stdscr)
+            except KeyboardInterrupt:
+                tui.cleanup_curses()
+                return None
+        
+        selected_output = None
+        
+        # Try to manually handle curses init to catch errors better
+        stdscr = None
+        try:
+            stdscr = curses.initscr()
+            curses.noecho()
+            curses.cbreak()
+            stdscr.keypad(True)
+            
+            # Call run_tui directly
+            selected_output = run_tui(stdscr)
+            
+        except curses.error:
+            pass
+        finally:
+            # Always cleanup curses
+            if stdscr is not None:
+                try:
+                    stdscr.keypad(False)
+                    curses.echo()
+                    curses.nocbreak()
+                    curses.endwin()
+                except curses.error:
+                    pass
+        
+        # For single_select mode, read output from file
+        if config.single_select and output_file:
+            try:
+                with open(output_file.name, 'r') as f:
+                    content = f.read().strip()
+                    if content:
+                        print(content)
+            except FileNotFoundError:
+                pass
+            finally:
+                # Cleanup temp file
+                import os
+                try:
+                    os.unlink(output_file.name)
+                except:
+                    pass
+        
+        return 0
+    except BrokenPipeError:
+        # Silently handle broken pipe (when piping to jq/other commands)
         return 0
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", file=sys.stderr)
         return 1
 
 

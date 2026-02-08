@@ -1,6 +1,8 @@
 import curses
 import json
+import os
 import sys
+import tempfile
 import time
 from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
@@ -46,6 +48,7 @@ class TUI:
         
         self.terminal_height = 0
         self.stdscr = None
+        self.output_file = None
         
         self.debug_file = open('/tmp/dv_keys.txt', 'a')
         self.debug_file.write("=== Session Start ===\n")
@@ -84,6 +87,7 @@ class TUI:
         
         self.last_mtime = get_file_mtime(self.current_file)
         
+        # Use configured columns if set, otherwise auto-detect from data
         columns = self.config.columns
         self.table = Table(self.data, columns)
     
@@ -112,6 +116,15 @@ class TUI:
         
         self.key_handler = KeyHandler(self.config)
         self._setup_custom_handlers()
+    
+    def cleanup_curses(self) -> None:
+        """Cleanup curses and restore terminal."""
+        if self.stdscr:
+            try:
+                curses.echo()
+                curses.endwin()
+            except curses.error:
+                pass
     
     def _setup_custom_handlers(self) -> None:
         """Setup custom key handlers."""
@@ -153,9 +166,9 @@ class TUI:
         viewport_height = height - 4
         start_y = 2
         
-        columns = self.config.columns
+        columns = self.table.columns
         headers = [c.capitalize() for c in columns]
-        column_widths = get_column_widths(self.config, width)
+        column_widths = self.table.calculate_column_widths(headers, width)
         
         tabs = []
         for i, file_path in enumerate(self.files):
@@ -320,7 +333,15 @@ class TUI:
                         }
                     else:
                         self.selected_output = selected_item
+                    
+                    # Write to output file to bypass curses stdout interference
+                    if self.output_file:
+                        with open(self.output_file, 'w') as f:
+                            json.dump(self.selected_output, f, indent=2)
+                            f.write('\n')
+                    
                     break
         
         self.debug_file.close()
+        self.cleanup_curses()
         return self.selected_output

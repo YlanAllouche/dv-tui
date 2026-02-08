@@ -137,4 +137,7 @@ def init_color_pairs() -> None:
     
     colors_to_use = [curses.COLOR_RED, curses.COLOR_BLUE, curses.COLOR_YELLOW, curses.COLOR_CYAN]
     for i, color in enumerate(colors_to_use):
-        curses.init_pair(9 + i, color, -1)
+        try:
+            curses.init_pair(9 + i, color, -1)
+        except curses.error:
+            pass
