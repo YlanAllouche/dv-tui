@@ -1,0 +1,32 @@
+[
+  {
+    "project_id": "proj_001",
+    "name": "Frontend Refactor",
+    "status": "active",
+    "summary": "Migrate React components to new architecture"
+  },
+  {
+    "project_id": "proj_002",
+    "name": "API Gateway",
+    "status": "pending",
+    "summary": "Implement new API gateway with rate limiting"
+  },
+  {
+    "project_id": "proj_003",
+    "name": "Database Migration",
+    "status": "active",
+    "summary": "Migrate PostgreSQL to latest version"
+  },
+  {
+    "project_id": "proj_004",
+    "name": "Mobile App v2",
+    "status": "pending",
+    "summary": "Release mobile app version 2.0"
+  },
+  {
+    "project_id": "proj_005",
+    "name": "Security Audit",
+    "status": "review",
+    "summary": "Third-party security assessment"
+  }
+]

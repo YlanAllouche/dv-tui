@@ -1,0 +1,9 @@
+id,product,category,price,in_stock
+101,Laptop Pro,Electronics,1299.99,yes
+102,Wireless Mouse,Electronics,49.99,yes
+103,Desk Chair,Furniture,299.99,no
+104,Mechanical Keyboard,Electronics,149.99,yes
+105,Monitor 27",Electronics,349.99,yes
+106,Standing Desk,Furniture,499.99,no
+107,USB-C Cable,Electronics,19.99,yes
+108,Ergonomic Mouse Pad,Accessories,24.99,yes

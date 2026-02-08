@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Alice Johnson",
+    "role": "Engineer",
+    "department": "Backend",
+    "salary": 125000,
+    "remote": true,
+    "join_date": "2020-03-15",
+    "manager": null
+  },
+  {
+    "name": "Bob Smith",
+    "role": "Designer",
+    "department": "Product",
+    "salary": 95000,
+    "remote": false,
+    "join_date": "2021-07-01",
+    "manager": "Alice Johnson"
+  },
+  {
+    "name": "Charlie Davis",
+    "role": "Manager",
+    "department": "Backend",
+    "salary": 180000,
+    "remote": true,
+    "join_date": "2019-01-10",
+    "manager": null
+  },
+  {
+    "name": "Diana Lee",
+    "role": "Engineer",
+    "department": "Frontend",
+    "salary": 130000,
+    "remote": true,
+    "join_date": "2022-02-20",
+    "manager": "Charlie Davis"
+  },
+  {
+    "name": "Eve Wilson",
+    "role": "Product Owner",
+    "department": "Product",
+    "salary": 150000,
+    "remote": false,
+    "join_date": "2021-11-05",
+    "manager": "Charlie Davis"
+  }
+]

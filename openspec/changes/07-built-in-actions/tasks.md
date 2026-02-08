@@ -1,20 +1,20 @@
 ## 1. Implementation
-- [ ] 1.1 Create actions.py module
-- [ ] 1.2 Implement scroll_up action
-- [ ] 1.3 Implement scroll_down action
-- [ ] 1.4 Implement select_row action
-- [ ] 1.5 Implement select_cell action
-- [ ] 1.6 Implement toggle_selection_mode action
-- [ ] 1.7 Implement enter_search action
-- [ ] 1.8 Implement exit_search action
-- [ ] 1.9 Implement search_navigate action
-- [ ] 1.10 Implement yank_cell action
-- [ ] 1.11 Implement Clipboard utility with xclip detection
-- [ ] 1.12 Implement Clipboard utility with wl-copy detection
-- [ ] 1.13 Implement Clipboard utility with pbcopy detection
-- [ ] 1.14 Implement Clipboard fallback (error message)
-- [ ] 1.15 Implement show_message action
-- [ ] 1.16 Implement refresh_data action for files
-- [ ] 1.17 Implement refresh_data action for stdin with command
-- [ ] 1.18 Implement refresh_data action for stdin without command (warning)
-- [ ] 1.19 Implement quit action
+- [x] 1.1 Create actions.py module
+- [x] 1.2 Implement scroll_up action
+- [x] 1.3 Implement scroll_down action
+- [x] 1.4 Implement select_row action
+- [x] 1.5 Implement select_cell action
+- [x] 1.6 Implement toggle_selection_mode action
+- [x] 1.7 Implement enter_search action
+- [x] 1.8 Implement exit_search action
+- [x] 1.9 Implement search_navigate action
+- [x] 1.10 Implement yank_cell action
+- [x] 1.11 Implement Clipboard utility with xclip detection
+- [x] 1.12 Implement Clipboard utility with wl-copy detection
+- [x] 1.13 Implement Clipboard utility with pbcopy detection
+- [x] 1.14 Implement Clipboard fallback (error message)
+- [x] 1.15 Implement show_message action
+- [x] 1.16 Implement refresh_data action for files
+- [x] 1.17 Implement refresh_data action for stdin with command
+- [x] 1.18 Implement refresh_data action for stdin without command (warning)
+- [x] 1.19 Implement quit action

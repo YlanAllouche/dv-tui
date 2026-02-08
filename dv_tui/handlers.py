@@ -335,10 +335,12 @@ class KeyHandler:
             return False, None
         
         if self.is_enter_key(key):
+            selected_item = None
             if self.filtered_indices:
                 table.selected_index = self.filtered_indices[self.search_selected_index]
+                selected_item = table.selected_item
             self.exit_search_mode(table)
-            return False, table.selected_item
+            return False, selected_item
         
         if key == curses.KEY_UP or key == 353:
             self.search_selected_index = max(0, self.search_selected_index - 1)

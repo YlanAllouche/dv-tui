@@ -1,4 +1,5 @@
 import sys
+import json
 import argparse
 import curses
 from pathlib import Path
@@ -314,7 +315,11 @@ def main(args: Optional[List[str]] = None) -> int:
     
     try:
         tui = TUI(files, single_select=config.single_select, config=config)
-        curses.wrapper(tui.run)
+        selected_output = curses.wrapper(tui.run)
+        if selected_output is not None:
+            json.dump(selected_output, sys.stdout, indent=2)
+            sys.stdout.write('\n')
+            sys.stdout.flush()
         return 0
     except Exception as e:
         print(f"Error: {e}")

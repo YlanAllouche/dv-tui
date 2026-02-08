@@ -1,4 +1,6 @@
 import curses
+import json
+import sys
 import time
 from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
@@ -26,6 +28,7 @@ class TUI:
         self.single_select = single_select
         self.delimiter = delimiter
         self.tab_name = config.tab_name if config else None
+        self.selected_output = None
         
         self.data: List[Dict[str, Any]] = []
         self.last_mtime: Optional[float] = None
@@ -306,12 +309,18 @@ class TUI:
                 if should_exit:
                     break
                 
-                if selected_item and self.key_handler.mode == Mode.NORMAL:
-                    item_to_select = selected_item
-                    if isinstance(selected_item, dict) and "item" in selected_item:
-                        item_to_select = selected_item["item"]
-                    should_exit = select_item(item_to_select, self.single_select)
-                    if should_exit:
-                        break
+                if self.single_select and selected_item is not None:
+                    if self.table.selection_mode == 'cell':
+                        cell_value = self.table.data[self.table.selected_index].get(
+                            self.table.columns[self.table.selected_column]
+                        )
+                        self.selected_output = {
+                            "field": self.table.columns[self.table.selected_column],
+                            "value": cell_value
+                        }
+                    else:
+                        self.selected_output = selected_item
+                    break
         
         self.debug_file.close()
+        return self.selected_output
