@@ -367,6 +367,34 @@ class TestLoadFile:
         with pytest.raises(Exception, match="Unsupported file format"):
             load_file(str(file_path))
 
+    def test_load_file_descriptor_path(self):
+        """Test that load_file handles file descriptor paths correctly."""
+        import os
+        import sys
+
+        # Create a pipe to simulate process substitution
+        r, w = os.pipe()
+        pid = os.fork()
+
+        if pid == 0:
+            # Child process: write JSON to pipe
+            os.close(r)
+            data = [{"a": 1, "b": 2}]
+            os.write(w, json.dumps(data).encode())
+            os.close(w)
+            sys.exit(0)
+        else:
+            # Parent process: read from file descriptor
+            os.close(w)
+            try:
+                fd_path = f'/dev/fd/{r}'
+                # This should work without raising "Unsupported file format"
+                result = load_file(fd_path)
+                assert result == [{"a": 1, "b": 2}]
+            finally:
+                os.close(r)
+                os.waitpid(pid, 0)
+
 
 class TestCreateLoader:
     """Test create_loader function."""
@@ -410,10 +438,60 @@ class TestCreateLoader:
         file_path = tmp_path / "test.csv"
         with open(file_path, 'w') as f:
             f.write("a;b\n")
-        
+
         loader = create_loader(str(file_path), delimiter=';')
         assert isinstance(loader, CsvDataLoader)
         assert loader.delimiter == ';'
+
+    def test_create_file_descriptor_loader(self):
+        """Test that file descriptor paths (e.g., /dev/fd/63) are recognized as JSON files."""
+        loader = create_loader('/dev/fd/63')
+        assert isinstance(loader, JsonDataLoader)
+        assert loader._is_file is True
+
+    def test_create_proc_self_fd_loader(self):
+        """Test that /proc/self/fd/ paths are recognized as JSON files."""
+        loader = create_loader('/proc/self/fd/11')
+        assert isinstance(loader, JsonDataLoader)
+        assert loader._is_file is True
+
+    def test_create_proc_pid_fd_loader(self):
+        """Test that /proc/<pid>/fd/ paths are recognized as JSON files."""
+        loader = create_loader('/proc/12345/fd/11')
+        assert isinstance(loader, JsonDataLoader)
+        assert loader._is_file is True
+
+    def test_file_descriptor_loading(self):
+        """Test loading JSON from a file descriptor path."""
+        import os
+        import sys
+
+        # Create a pipe to simulate process substitution
+        r, w = os.pipe()
+        pid = os.fork()
+
+        if pid == 0:
+            # Child process: write JSON to pipe
+            os.close(r)
+            data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+            os.write(w, json.dumps(data).encode())
+            os.close(w)
+            sys.exit(0)
+        else:
+            # Parent process: read from file descriptor
+            os.close(w)
+            try:
+                fd_path = f'/dev/fd/{r}'
+                loader = create_loader(fd_path)
+                assert isinstance(loader, JsonDataLoader)
+                assert loader._is_file is True
+
+                # Load the data
+                result = loader.load()
+                assert result == [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+            finally:
+                os.close(r)
+                os.waitpid(pid, 0)
 
 
 class TestDetectSource:
@@ -501,3 +579,41 @@ class TestIntegration:
             result = loader.load()
             assert len(result) > 0
             assert all(isinstance(item, dict) for item in result)
+
+
+class TestProcessSubstitutionIntegration:
+    """Test integration with bash process substitution <(...)"""
+    
+    def test_process_substitution_single_read(self):
+        """Test that file descriptor paths are only read once (they can't be reread)."""
+        import os
+        import sys
+        
+        # Create a pipe to simulate process substitution
+        r, w = os.pipe()
+        pid = os.fork()
+        
+        if pid == 0:
+            # Child process: write JSON to pipe
+            os.close(r)
+            data = [{"test": "value"}]
+            os.write(w, json.dumps(data).encode())
+            os.close(w)
+            os._exit(0)
+        else:
+            # Parent process: read from file descriptor
+            os.close(w)
+            try:
+                fd_path = f'/proc/self/fd/{r}'
+                
+                # First read should work
+                data1 = load_file(fd_path)
+                assert data1 == [{"test": "value"}]
+                
+                # Second read should fail (pipe is empty)
+                # This tests that our CLI doesn't try to read FD paths twice
+                with pytest.raises(Exception):
+                    load_file(fd_path)
+            finally:
+                os.close(r)
+                os.waitpid(pid, 0)

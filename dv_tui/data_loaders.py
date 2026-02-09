@@ -65,11 +65,19 @@ class JsonDataLoader(DataLoader):
     
     def __init__(self, source: str):
         super().__init__(source)
-        self._is_file = (
-            Path(source).exists() 
-            if not (source.startswith('[') or source.startswith('{')) 
-            else False
-        )
+        # File descriptors from process substitution are always files
+        # even if Path.exists() returns False at initialization time
+        # Linux uses /dev/fd/ or /proc/self/fd/ or /proc/<pid>/fd/
+        if (source.startswith('/dev/fd/') or
+            source.startswith('/proc/self/fd/') or
+            (source.startswith('/proc/') and '/fd/' in source)):
+            self._is_file = True
+        else:
+            self._is_file = (
+                Path(source).exists()
+                if not (source.startswith('[') or source.startswith('{'))
+                else False
+            )
     
     def load(self) -> List[Dict[str, Any]]:
         """Load JSON data from file or inline string."""
@@ -242,7 +250,13 @@ def load_file(file_path: str, delimiter: str = ',') -> List[Dict[str, Any]]:
     path = Path(file_path)
     ext = path.suffix.lower()
     
-    if ext == '.json':
+    # Check if it's a file descriptor from process substitution
+    # These are created by bash's <(...) syntax and should be read as JSON
+    is_fd_path = (file_path.startswith('/dev/fd/') or
+                  file_path.startswith('/proc/self/fd/') or
+                  (file_path.startswith('/proc/') and '/fd/' in file_path))
+    
+    if ext == '.json' or is_fd_path:
         loader = JsonDataLoader(file_path)
         return loader.load()
     elif ext == '.csv':
@@ -252,22 +266,30 @@ def load_file(file_path: str, delimiter: str = ',') -> List[Dict[str, Any]]:
         raise Exception(f"Unsupported file format: {ext}")
 
 
-def create_loader(source: str, stdin_timeout: Optional[float] = None, 
+def create_loader(source: str, stdin_timeout: Optional[float] = None,
                   delimiter: str = ',') -> DataLoader:
     """
     Create appropriate DataLoader based on source type.
-    
+
     Args:
         source: Source string (file path, inline JSON, or 'stdin')
         stdin_timeout: Timeout for stdin in seconds (None = no timeout)
         delimiter: Delimiter for CSV files
-    
+
     Returns:
         DataLoader instance
     """
     if source == 'stdin':
         return StdinDataLoader(stdin_timeout)
-    
+
+    # Check if it's a file descriptor from process substitution
+    # These are created by bash's <(...) syntax and should be read as JSON
+    # Linux uses /dev/fd/ or /proc/self/fd/ or /proc/<pid>/fd/
+    if (source.startswith('/dev/fd/') or 
+        source.startswith('/proc/self/fd/') or
+        (source.startswith('/proc/') and '/fd/' in source)):
+        return JsonDataLoader(source)
+
     if Path(source).exists():
         path = Path(source)
         if path.suffix.lower() == '.json':
@@ -276,10 +298,10 @@ def create_loader(source: str, stdin_timeout: Optional[float] = None,
             return CsvDataLoader(source, delimiter=delimiter)
         else:
             raise Exception(f"Unsupported file format: {path.suffix}")
-    
+
     if source.startswith('[') or source.startswith('{'):
         return JsonDataLoader(source)
-    
+
     raise Exception(f"Cannot load from source: {source}")
 
 

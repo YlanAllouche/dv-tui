@@ -171,7 +171,11 @@ class SimpleInitiativeTUI:
             with open(self.json_file, 'r') as f:
                 self.initiatives = json.load(f)
             # Update modification time after successful load
-            self.last_mtime = os.stat(self.json_file).st_mtime
+            # File descriptors (e.g., /dev/fd/63 from process substitution) may not support stat
+            try:
+                self.last_mtime = os.stat(self.json_file).st_mtime
+            except (OSError, IOError):
+                self.last_mtime = None
         except FileNotFoundError:
             raise Exception(f"{self.json_file} not found")
         except json.JSONDecodeError:

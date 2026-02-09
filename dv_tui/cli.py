@@ -231,13 +231,21 @@ def main(args: Optional[List[str]] = None) -> int:
         return 1
     
     # Load and validate inline config from first file
-    try:
-        data = load_file(files[0])
-        from .config import load_config_from_inline_json
-        inline_config = load_config_from_inline_json(data)
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        return 1
+    # Note: File descriptors from process substitution (<(...)) can only be read once,
+    # so we skip inline config loading for FD paths and let the TUI handle them
+    inline_config = {}
+    is_fd_path = (files[0].startswith('/dev/fd/') or
+                  files[0].startswith('/proc/self/fd/') or
+                  (files[0].startswith('/proc/') and '/fd/' in files[0]))
+    
+    if not is_fd_path:
+        try:
+            data = load_file(files[0])
+            from .config import load_config_from_inline_json
+            inline_config = load_config_from_inline_json(data)
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
     
     config = load_config(
         config_path=parsed_args.config,
