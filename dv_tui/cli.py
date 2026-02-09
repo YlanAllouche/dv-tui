@@ -1,5 +1,7 @@
 import sys
 import json
+import os
+import tempfile
 import argparse
 import curses
 from pathlib import Path
@@ -255,7 +257,6 @@ def main(args: Optional[List[str]] = None) -> int:
         # This bypasses curses stdout interference
         output_file = None
         if config.single_select:
-            import tempfile
             output_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
             tui.output_file = output_file.name
             output_file.close()
@@ -272,18 +273,35 @@ def main(args: Optional[List[str]] = None) -> int:
         
         # Try to manually handle curses init to catch errors better
         stdscr = None
+        saved_stdout = None
         try:
+            # In single_select mode with piped stdout, redirect stdout to /dev/tty
+            # so curses can display the TUI on the terminal while output goes to the pipe
+            if config.single_select and not sys.stdout.isatty():
+                # Save the pipe stdout
+                saved_stdout = os.dup(sys.stdout.fileno())
+                # Redirect stdout to /dev/tty for curses
+                tty_fd = os.open('/dev/tty', os.O_WRONLY)
+                os.dup2(tty_fd, sys.stdout.fileno())
+                os.close(tty_fd)
+            
             stdscr = curses.initscr()
             curses.noecho()
             curses.cbreak()
             stdscr.keypad(True)
             
-            # Call run_tui directly
+            # Call run_tUI directly
             selected_output = run_tui(stdscr)
             
         except curses.error:
             pass
         finally:
+            # Before curses cleanup, redirect stdout to /dev/null to prevent
+            # escape sequences from going to the pipe (if stdout was piped)
+            if saved_stdout is not None:
+                devnull_fd = os.open(os.devnull, os.O_WRONLY)
+                os.dup2(devnull_fd, sys.stdout.fileno())
+            
             # Always cleanup curses
             if stdscr is not None:
                 try:
@@ -293,6 +311,12 @@ def main(args: Optional[List[str]] = None) -> int:
                     curses.endwin()
                 except curses.error:
                     pass
+            
+            # Close devnull fd and restore stdout to the pipe
+            if saved_stdout is not None:
+                os.close(devnull_fd)
+                os.dup2(saved_stdout, sys.stdout.fileno())
+                os.close(saved_stdout)
         
         # For single_select mode, read output from file
         if config.single_select and output_file:
@@ -305,7 +329,6 @@ def main(args: Optional[List[str]] = None) -> int:
                 pass
             finally:
                 # Cleanup temp file
-                import os
                 try:
                     os.unlink(output_file.name)
                 except:

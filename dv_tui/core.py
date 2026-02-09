@@ -121,7 +121,9 @@ class TUI:
         """Cleanup curses and restore terminal."""
         if self.stdscr:
             try:
+                self.stdscr.keypad(False)
                 curses.echo()
+                curses.nocbreak()
                 curses.endwin()
             except curses.error:
                 pass
