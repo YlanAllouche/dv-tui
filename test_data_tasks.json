@@ -1,0 +1,32 @@
+[
+  {
+    "task": "Design API",
+    "project": "Project A",
+    "status": "done",
+    "hours": 4
+  },
+  {
+    "task": "Implement UI",
+    "project": "Project A",
+    "status": "in-progress",
+    "hours": 8
+  },
+  {
+    "task": "Write tests",
+    "project": "Project A",
+    "status": "pending",
+    "hours": 2
+  },
+  {
+    "task": "Read docs",
+    "project": "Project B",
+    "status": "in-progress",
+    "hours": 6
+  },
+  {
+    "task": "Practice exercises",
+    "project": "Project B",
+    "status": "pending",
+    "hours": 10
+  }
+]

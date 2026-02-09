@@ -1,0 +1,18 @@
+[
+  {
+    "_config": {
+      "tabs": [
+        "test_data_projects.json",
+        "test_data_tasks.json"
+      ],
+      "columns": ["name", "type", "status", "summary"]
+    }
+  },
+  {
+    "name": "Project A",
+    "type": "work",
+    "status": "active",
+    "priority": "high",
+    "summary": "Build new dashboard"
+  }
+]

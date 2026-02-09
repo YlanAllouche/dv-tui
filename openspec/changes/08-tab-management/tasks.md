@@ -1,11 +1,11 @@
 ## 1. Implementation
-- [ ] 1.1 Add tab state management (multiple tabs with data, selection, scroll)
-- [ ] 1.2 Add `--tab-field` CLI flag for custom tab field name
-- [ ] 1.3 Implement loading tabs from JSON config
-- [ ] 1.4 Ignore CLI file args when tabs are in config
-- [ ] 1.5 Preserve h/l keybinds for prev/next tab navigation
-- [ ] 1.6 Implement tab indicator in header
-- [ ] 1.7 Implement drill-down to new tab
-- [ ] 1.8 Ensure each tab maintains its own data state
-- [ ] 1.9 Ensure each tab maintains its own selection state
-- [ ] 1.10 Ensure each tab maintains its own scroll state
+- [x] 1.1 Add tab state management (multiple tabs with data, selection, scroll)
+- [x] 1.2 Add `--tab-field` CLI flag for custom tab field name
+- [x] 1.3 Implement loading tabs from JSON config
+- [x] 1.4 Ignore CLI file args when tabs are in config
+- [x] 1.5 Preserve h/l keybinds for prev/next tab navigation
+- [x] 1.6 Implement tab indicator in header
+- [x] 1.7 Implement drill-down to new tab
+- [x] 1.8 Ensure each tab maintains its own data state
+- [x] 1.9 Ensure each tab maintains its own selection state
+- [x] 1.10 Ensure each tab maintains its own scroll state

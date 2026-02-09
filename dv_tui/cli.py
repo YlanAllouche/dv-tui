@@ -133,6 +133,13 @@ Examples:
         help="Remove a keybind (format: 'key' or 'mode:key')"
     )
     
+    parser.add_argument(
+        "--tab-field",
+        type=str,
+        default="_config.tabs",
+        help="Custom field name for tabs in JSON config (default: '_config.tabs')"
+    )
+    
     return parser.parse_args(args)
 
 
@@ -201,6 +208,8 @@ def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
         if unbinds:
             cli_config["unbinds"] = unbinds
     
+    cli_config["tab_field"] = args.tab_field
+    
     return cli_config
 
 
@@ -221,9 +230,12 @@ def main(args: Optional[List[str]] = None) -> int:
     
     cli_config = get_cli_config(parsed_args)
     
+    tab_field = cli_config.get("tab_field", "_config.tabs")
+    
     # Load inline config from first file and validate it before TUI creation
     inline_config = {}
     files = parsed_args.files
+    tab_field = cli_config.get("tab_field", "_config.tabs")
     
     if not files:
         print("Error: No input file provided", file=sys.stderr)
@@ -243,6 +255,13 @@ def main(args: Optional[List[str]] = None) -> int:
             data = load_file(files[0])
             from .config import load_config_from_inline_json
             inline_config = load_config_from_inline_json(data)
+            
+            # Check if tabs are defined in config
+            if inline_config and tab_field in inline_config:
+                tabs_config = inline_config[tab_field]
+                if isinstance(tabs_config, list) and tabs_config:
+                    # Use tabs from config, ignoring CLI file args
+                    files = tabs_config
         except Exception as e:
             print(f"Error: {e}", file=sys.stderr)
             return 1
@@ -259,7 +278,7 @@ def main(args: Optional[List[str]] = None) -> int:
         config.stdin_timeout = parsed_args.stdin_timeout
     
     try:
-        tui = TUI(files, single_select=config.single_select, config=config)
+        tui = TUI(files, single_select=config.single_select, config=config, tab_field=tab_field)
         
         # For single_select mode, create a temp file for output
         # This bypasses curses stdout interference
