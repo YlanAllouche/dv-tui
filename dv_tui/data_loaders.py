@@ -8,6 +8,23 @@ from typing import List, Dict, Any, Union, Optional
 import subprocess
 
 
+def filter_config_items(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Filter out items that only contain _config key from data.
+    
+    Returns data with config-only items removed.
+    """
+    filtered = []
+    for item in data:
+        if "_config" in item and len(item) == 1:
+            continue
+        if "_config" in item:
+            filtered.append({k: v for k, v in item.items() if k != "_config"})
+        else:
+            filtered.append(item)
+    return filtered
+
+
 class DataLoader(ABC):
     """Abstract base class for data loaders."""
     
@@ -112,6 +129,8 @@ class JsonDataLoader(DataLoader):
             if not isinstance(data, list):
                 raise Exception(f"JSON must be a list of objects, got {type(data).__name__}")
             
+            # Filter out _config items
+            data = filter_config_items(data)
             return fill_missing_keys(data)
         except FileNotFoundError:
             raise Exception(f"{self.source} not found")
@@ -132,6 +151,8 @@ class JsonDataLoader(DataLoader):
             if not isinstance(data, list):
                 raise Exception(f"JSON must be a list of objects, got {type(data).__name__}")
             
+            # Filter out _config items
+            data = filter_config_items(data)
             return fill_missing_keys(data)
         except json.JSONDecodeError as e:
             msg = "Invalid JSON"

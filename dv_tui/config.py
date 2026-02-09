@@ -479,6 +479,50 @@ def load_config_from_inline_json(data: List[Dict[str, Any]]) -> Dict[str, Any]:
     return {}
 
 
+def load_config_from_inline_json_file(file_path: str) -> Dict[str, Any]:
+    """
+    Load configuration from a JSON file without filtering config items.
+    This is used to extract config before data is filtered.
+    """
+    import json
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        if not isinstance(data, list) or len(data) == 0:
+            return {}
+        
+        first_item = data[0]
+        if "_config" in first_item:
+            inline_config = first_item["_config"]
+            validation_error = validate_config(inline_config)
+            if validation_error:
+                raise Exception(f"Inline config validation error: {validation_error}")
+            return inline_config
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    
+    return {}
+
+
+def filter_config_items(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Filter out items that only contain _config key from data.
+    
+    Returns data with config-only items removed.
+    """
+    filtered = []
+    for item in data:
+        if "_config" in item and len(item) == 1:
+            continue
+        if "_config" in item:
+            filtered.append({k: v for k, v in item.items() if k != "_config"})
+        else:
+            filtered.append(item)
+    return filtered
+
+
 def merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     """Recursively merge two config dictionaries."""
     result = base.copy()

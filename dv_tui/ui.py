@@ -23,10 +23,20 @@ def draw_footer(stdscr, y: int, text: str, width: int) -> None:
 
 def draw_tabs(stdscr, y: int, tabs: List[Tuple[str, bool]], width: int) -> None:
     """Draw tabs with active tab highlighted."""
+    # Calculate total width needed for all tabs including separators
+    separator = " | "
+    total_width = sum(len(tab_text) for tab_text, _ in tabs)
+    total_width += len(separator) * (len(tabs) - 1) if len(tabs) > 1 else 0
+    
+    # Use full tab names if they all fit
+    use_full_names = total_width <= width
+    
     x = 0
-    for tab_text, is_active in tabs:
+    for i, (tab_text, is_active) in enumerate(tabs):
         display_text = tab_text
-        if x + len(display_text) > width:
+        
+        # Only truncate if necessary and not using full names
+        if not use_full_names and x + len(display_text) > width:
             display_text = display_text[:width - x]
         
         if is_active:
@@ -41,12 +51,15 @@ def draw_tabs(stdscr, y: int, tabs: List[Tuple[str, bool]], width: int) -> None:
                 pass
         
         x += len(display_text)
-        if x < width - 3:
-            try:
-                stdscr.addstr(y, x, " | ")
-            except curses.error:
-                pass
-            x += 3
+        
+        # Add separator if not last tab and there's room
+        if i < len(tabs) - 1:
+            if use_full_names or x + len(separator) <= width:
+                try:
+                    stdscr.addstr(y, x, separator)
+                except curses.error:
+                    pass
+                x += len(separator)
 
 
 def draw_dialog(stdscr, title: str, message: str, width: Optional[int] = None, height: Optional[int] = None) -> int:

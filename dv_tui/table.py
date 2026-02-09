@@ -228,7 +228,9 @@ class Table:
                       column_widths: List[int], header_colors: List[int]) -> None:
         """Render column headers."""
         x = 0
-        for header, col_width, color in zip(headers, column_widths, header_colors):
+        for i, (header, col_width) in enumerate(zip(headers, column_widths)):
+            # Cycle through header colors if there are more columns than colors
+            color = header_colors[i % len(header_colors)]
             header_str = header.ljust(col_width)
             try:
                 stdscr.addstr(y, x, header_str, color)

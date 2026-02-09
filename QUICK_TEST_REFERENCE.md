@@ -38,3 +38,5 @@
 - [ ] Tab names show "X items" count
 - [ ] `--tab-field` uses custom field name
 - [ ] Tabs from config work (ignoring CLI args)
+- [ ] Config-only items don't appear as empty rows
+- [ ] Tab names not unnecessarily truncated when there's room

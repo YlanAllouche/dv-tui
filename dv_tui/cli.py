@@ -252,9 +252,8 @@ def main(args: Optional[List[str]] = None) -> int:
     
     if not is_fd_path:
         try:
-            data = load_file(files[0])
-            from .config import load_config_from_inline_json
-            inline_config = load_config_from_inline_json(data)
+            from .config import load_config_from_inline_json_file
+            inline_config = load_config_from_inline_json_file(files[0])
             
             # Check if tabs are defined in config
             if inline_config and tab_field in inline_config:

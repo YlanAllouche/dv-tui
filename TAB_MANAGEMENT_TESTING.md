@@ -9,9 +9,11 @@ Run the interactive test script:
 
 ## Test Data Files
 
-1. **test_data_projects.json** - Sample project data
-2. **test_data_tasks.json** - Sample task data
+1. **test_data_projects.json** - Sample project data (3 items)
+2. **test_data_tasks.json** - Sample task data (5 items)
 3. **test_with_tabs.json** - Config file with `_config.tabs` defined
+   - Contains inline config in first item (filtered out from data)
+   - Defines tabs for projects and tasks files
 4. **test_custom_tab_field.json** - Config file with custom tab field `myTabs`
 
 ## Feature Tests
@@ -140,6 +142,26 @@ Each file can have its own inline config with different columns:
   { "name": "Item 1", "status": "active" }
 ]
 ```
+
+## Fixes Applied
+
+### Header Visibility Issue (Fixed)
+Previously, when using columns like `["name", "type", "status", "summary"]`, the "type" and "summary" column headers would be invisible. This was caused by the `zip()` function truncating to the shortest list - only 3 header colors were defined, so only the first 3 column headers were rendered.
+
+**Fix:** Updated `render_headers()` to cycle through colors using modulo (`i % len(header_colors)`), ensuring all column headers are rendered regardless of the number of columns.
+
+### Empty Row Issue (Fixed)
+Previously, when using `-s` flag with a config file containing `_config` as the first item, an empty row would appear under the header. This was because:
+
+1. Config was loaded from filtered data (missing `_config` item)
+2. Config-only items were displayed as data rows
+
+**Fix:** Config is now loaded from the raw JSON file before data filtering, and config-only items are automatically filtered out from data.
+
+### Tab Name Truncation (Fixed)
+Previously, tab names were truncated even when there was enough room to display them fully.
+
+**Fix:** Tab names are now displayed in full when the total width of all tabs fits within the available terminal width. Truncation only occurs when tabs exceed available space.
 
 ## Troubleshooting
 
