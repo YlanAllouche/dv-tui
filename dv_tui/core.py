@@ -35,6 +35,8 @@ class Tab:
     selected_column: int = 0
     last_mtime: Optional[float] = None
     config: Optional[Config] = None
+    parent_context: Optional[Dict[str, Any]] = None
+    navigation_stack: List[Dict[str, Any]] = field(default_factory=list)
 
 
 class TUI:
@@ -224,15 +226,17 @@ class TUI:
             self.active_tab = min(len(self.tabs) - 1, self.active_tab + 1)
             self.load_data()
     
-    def create_tab_from_data(self, name: str, data: List[Dict[str, Any]]) -> None:
+    def create_tab_from_data(self, name: str, data: List[Dict[str, Any]], parent_context: Optional[Dict[str, Any]] = None) -> None:
         """
         Create a new tab from the provided data.
         
         Args:
             name: Name for the new tab
             data: Data to display in the new tab
+            parent_context: Parent data context for triggers/actions
         """
         tab = Tab(name=name, source="inline", data=data, config=self.config)
+        tab.parent_context = parent_context
         
         # Use configured columns if set, otherwise auto-detect from data
         columns = self.config.columns
@@ -250,6 +254,103 @@ class TUI:
         
         # Switch to the new tab
         self.active_tab = len(self.tabs) - 1
+    
+    def drill_down(self, value: Any, field_name: Optional[str] = None) -> None:
+        """
+        Drill down into nested data.
+        
+        Args:
+            value: The cell value (list or dict) to drill into
+            field_name: The name of the field being drilled into (optional)
+        """
+        if not self.current_tab or not self.table:
+            return
+        
+        drill_config = self.current_tab.config.drill_down if self.current_tab.config else None
+        
+        # If drill_down config has a field_name, use that to get the data
+        if drill_config and drill_config.field_name and drill_config.field_name != field_name:
+            if isinstance(value, dict) and drill_config.field_name in value:
+                value = value[drill_config.field_name]
+                field_name = drill_config.field_name
+        
+        # Convert value to list format for table display
+        nested_data = []
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    nested_data.append(item)
+                else:
+                    nested_data.append({"value": item})
+        elif isinstance(value, dict):
+            nested_data = [value]
+        else:
+            return  # Not drillable
+        
+        # Set parent context
+        parent_context = self.current_tab.data[self.table.selected_index].copy() if 0 <= self.table.selected_index < len(self.current_tab.data) else None
+        
+        # Check if new_tab is enabled
+        if drill_config and drill_config.new_tab:
+            drill_name = f"{self.current_tab.name}"
+            if field_name:
+                drill_name += f".{field_name}"
+            drill_name += " [drill-down]"
+            self.create_tab_from_data(drill_name, nested_data, parent_context)
+        else:
+            # Save current state to navigation stack
+            if self.current_tab and self.table:
+                self.current_tab.navigation_stack.append({
+                    "data": self.current_tab.data.copy(),
+                    "selected_index": self.table.selected_index,
+                    "scroll_offset": self.table.scroll_offset,
+                    "selection_mode": self.table.selection_mode,
+                    "selected_column": self.table.selected_column,
+                    "parent_context": self.current_tab.parent_context,
+                })
+            
+            # Create drill-down view
+            drill_name = f"{self.current_tab.name}"
+            if field_name:
+                drill_name += f".{field_name}"
+            drill_name += " [drill-down]"
+            
+            # Replace current tab data with drill-down data
+            self.current_tab.data = nested_data
+            self.current_tab.parent_context = parent_context
+            columns = self.config.columns
+            self.current_tab.table = Table(self.current_tab.data, columns)
+            self.current_tab.table.selected_index = 0
+            self.current_tab.table.scroll_offset = 0
+            self.current_tab.table.selection_mode = 'row'
+            self.current_tab.table.selected_column = 0
+    
+    def go_back(self) -> bool:
+        """
+        Go back to the previous navigation level.
+        
+        Returns:
+            True if went back, False if no previous level exists
+        """
+        if not self.current_tab:
+            return False
+        
+        if not self.current_tab.navigation_stack:
+            return False
+        
+        previous_state = self.current_tab.navigation_stack.pop()
+        
+        self.current_tab.data = previous_state["data"]
+        self.current_tab.parent_context = previous_state["parent_context"]
+        
+        columns = self.config.columns
+        self.current_tab.table = Table(self.current_tab.data, columns)
+        self.current_tab.table.selected_index = previous_state["selected_index"]
+        self.current_tab.table.scroll_offset = previous_state["scroll_offset"]
+        self.current_tab.table.selection_mode = previous_state["selection_mode"]
+        self.current_tab.table.selected_column = previous_state["selected_column"]
+        
+        return True
     
     def render(self) -> None:
         """Render the TUI."""
@@ -273,10 +374,11 @@ class TUI:
             display_name = tab.name
             
             if i == self.active_tab:
+                drill_level = len(tab.navigation_stack) + 1
                 if self.key_handler.mode == Mode.SEARCH:
-                    tab_text = f"{display_name} - {len(self.key_handler.filtered_indices)}/{len(tab.data)} items [SEARCH]"
+                    tab_text = f"{display_name} (Level {drill_level}) - {len(self.key_handler.filtered_indices)}/{len(tab.data)} items [SEARCH]"
                 else:
-                    tab_text = f"{display_name} - {len(tab.data)} items"
+                    tab_text = f"{display_name} (Level {drill_level}) - {len(tab.data)} items"
             else:
                 tab_text = display_name
             tabs.append((tab_text, i == self.active_tab))
@@ -331,12 +433,18 @@ class TUI:
             for col_idx, (col, col_width) in enumerate(zip(self.table.columns, column_widths)):
                 value = item.get(col, "")
                 
+                is_drillable = self.table.is_drillable(item_index, col_idx)
+                drill_indicator = ""
+                if is_drillable:
+                    drill_indicator = "[]" if isinstance(value, list) else "{}"
+                
                 if col == "type" and isinstance(value, int):
                     minutes = round(value / 60)
-                    display_str = f"{minutes}m".ljust(col_width)
+                    display_str = f"{minutes}m{drill_indicator}".ljust(col_width)
                 else:
                     from .utils import sanitize_display_string
-                    display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
+                    display_str = sanitize_display_string(str(value), max_length=col_width - len(drill_indicator) - 1).ljust(col_width - len(drill_indicator)) + drill_indicator
+                    display_str = display_str.ljust(col_width)
                 
                 is_cell_selected = (self.table.selection_mode == 'cell' and 
                                     is_selected and 
@@ -363,6 +471,9 @@ class TUI:
                         if color == curses.A_NORMAL:
                             color = self.table.get_dynamic_color("status", str(value))
                     
+                    if is_drillable:
+                        color = color | curses.A_BOLD
+                    
                     try:
                         self.stdscr.addstr(y, x, display_str, color)
                     except curses.error:
@@ -373,18 +484,20 @@ class TUI:
     def _render_footer(self, height: int, width: int) -> None:
         """Render footer with keybind hints."""
         footer_y = height - 1
+        has_nav_stack = self.current_tab and len(self.current_tab.navigation_stack) > 0
+        back_hint = " | ESC go back" if has_nav_stack else ""
         if self.key_handler.mode == Mode.SEARCH:
-            keybind_hints = "Type to filter | Tab/S-Tab navigate | ESC exit search | Enter select"
+            keybind_hints = "Type to filter | Tab/S-Tab navigate | ESC exit search | Enter select" + back_hint
         elif self.table.selection_mode == 'cell':
             if len(self.tabs) > 1:
-                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter select cell | c: row mode | / search | q quit"
+                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter drill-down/select cell | c: row mode | / search | q quit" + back_hint
             else:
-                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter select cell | c: row mode | / search | q quit"
+                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter drill-down/select cell | c: row mode | / search | q quit" + back_hint
         else:
             if len(self.tabs) > 1:
-                keybind_hints = "j/↓ down | k/↑ up | h/← prev tab | l/→ next tab | Enter select row | c: cell mode | / search | q quit"
+                keybind_hints = "j/↓ down | k/↑ up | h/← prev tab | l/→ next tab | Enter select row | c: cell mode | / search | q quit" + back_hint
             else:
-                keybind_hints = "j/↓ down | k/↑ up | Enter select row | c: cell mode | / search | q quit"
+                keybind_hints = "j/↓ down | k/↑ up | Enter select row | c: cell mode | / search | q quit" + back_hint
         draw_footer(self.stdscr, footer_y, keybind_hints, width)
     
     def run(self, stdscr) -> None:
@@ -414,13 +527,17 @@ class TUI:
                 self.tab_left()
             elif self.key_handler.is_right_key(key) and self.table.selection_mode != 'cell':
                 self.tab_right()
+            elif self.key_handler.is_escape_key(key) and self.current_tab and len(self.current_tab.navigation_stack) > 0:
+                self.go_back()
             else:
                 should_exit, selected_item = self.key_handler.handle_key(key, self.table, self.terminal_height)
                 
                 if should_exit:
                     break
                 
-                if self.single_select and selected_item is not None:
+                if selected_item and selected_item.get("drill_down"):
+                    self.drill_down(selected_item["value"], selected_item["column"])
+                elif self.single_select and selected_item is not None:
                     if self.table.selection_mode == 'cell':
                         cell_value = self.table.data[self.table.selected_index].get(
                             self.table.columns[self.table.selected_column]

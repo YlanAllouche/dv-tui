@@ -314,6 +314,15 @@ class KeyHandler:
         elif self.is_enter_key(key):
             if table.selection_mode == 'cell':
                 cell_value = table.data[table.selected_index].get(table.columns[table.selected_column])
+                if table.is_drillable(table.selected_index, table.selected_column):
+                    return False, {
+                        "value": cell_value,
+                        "row": table.selected_index,
+                        "column": table.columns[table.selected_column],
+                        "column_index": table.selected_column,
+                        "item": table.selected_item,
+                        "drill_down": True
+                    }
                 return False, {
                     "value": cell_value,
                     "row": table.selected_index,

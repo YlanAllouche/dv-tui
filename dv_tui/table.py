@@ -224,6 +224,16 @@ class Table:
                 
                 x += col_width + 1
     
+    def is_drillable(self, row_index: int, col_index: int) -> bool:
+        """Check if a cell contains drillable data (array or object)."""
+        if not (0 <= row_index < len(self.data)):
+            return False
+        if not (0 <= col_index < len(self.columns)):
+            return False
+        
+        value = self.data[row_index].get(self.columns[col_index])
+        return isinstance(value, (list, dict))
+    
     def render_headers(self, stdscr, y: int, headers: List[str],
                       column_widths: List[int], header_colors: List[int]) -> None:
         """Render column headers."""
