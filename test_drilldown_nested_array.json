@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "name": "Project Alpha",
+    "tasks": [
+      {"id": 1, "title": "Design phase", "status": "complete"},
+      {"id": 2, "title": "Implementation", "status": "in_progress"},
+      {"id": 3, "title": "Testing", "status": "pending"}
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Project Beta",
+    "tasks": [
+      {"id": 4, "title": "Research", "status": "complete"},
+      {"id": 5, "title": "Prototyping", "status": "in_progress"}
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Project Gamma",
+    "tasks": []
+  }
+]
