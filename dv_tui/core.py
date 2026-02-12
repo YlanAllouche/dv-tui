@@ -268,7 +268,7 @@ class TUI:
         
         drill_config = self.current_tab.config.drill_down if self.current_tab.config else None
         
-        # If drill_down config has a field_name, use that to get the data
+        # If drill_down config has a field_name, use that to get data
         if drill_config and drill_config.field_name and drill_config.field_name != field_name:
             if isinstance(value, dict) and drill_config.field_name in value:
                 value = value[drill_config.field_name]
@@ -283,7 +283,21 @@ class TUI:
                 else:
                     nested_data.append({"value": item})
         elif isinstance(value, dict):
-            nested_data = [value]
+            # Smart handling: if dict has a single array field, use that array's content
+            if len(value) == 1:
+                single_key = list(value.keys())[0]
+                single_value = value[single_key]
+                if isinstance(single_value, list):
+                    # Drill into the array content directly
+                    for item in single_value:
+                        if isinstance(item, dict):
+                            nested_data.append(item)
+                        else:
+                            nested_data.append({"value": item})
+                else:
+                    nested_data = [value]
+            else:
+                nested_data = [value]
         else:
             return  # Not drillable
         
@@ -327,7 +341,7 @@ class TUI:
     
     def go_back(self) -> bool:
         """
-        Go back to the previous navigation level.
+        Go back to previous navigation level.
         
         Returns:
             True if went back, False if no previous level exists
@@ -351,6 +365,26 @@ class TUI:
         self.current_tab.table.selected_column = previous_state["selected_column"]
         
         return True
+    
+    def _get_named_array_label(self, value: Any) -> Optional[str]:
+        """
+        Get label for objects with a single array field.
+        
+        Returns the field name if value is a dict with exactly one key
+        containing an array, otherwise None.
+        """
+        if not isinstance(value, dict):
+            return None
+        if len(value) != 1:
+            return None
+        
+        single_key = list(value.keys())[0]
+        single_value = value[single_key]
+        
+        if isinstance(single_value, list):
+            return f"[{single_key}]"
+        
+        return None
     
     def render(self) -> None:
         """Render the TUI."""
@@ -434,17 +468,25 @@ class TUI:
                 value = item.get(col, "")
                 
                 is_drillable = self.table.is_drillable(item_index, col_idx)
-                drill_indicator = ""
-                if is_drillable:
-                    drill_indicator = "[]" if isinstance(value, list) else "{}"
                 
-                if col == "type" and isinstance(value, int):
-                    minutes = round(value / 60)
-                    display_str = f"{minutes}m{drill_indicator}".ljust(col_width)
+                if is_drillable:
+                    named_array_label = self._get_named_array_label(value)
+                    if named_array_label:
+                        display_str = named_array_label.ljust(col_width)
+                    else:
+                        drill_indicator = "[]" if isinstance(value, list) else "{}"
+                        if col == "type" and isinstance(value, int):
+                            minutes = round(value / 60)
+                            display_str = f"{minutes}m{drill_indicator}".ljust(col_width)
+                        else:
+                            display_str = drill_indicator.ljust(col_width)
                 else:
-                    from .utils import sanitize_display_string
-                    display_str = sanitize_display_string(str(value), max_length=col_width - len(drill_indicator) - 1).ljust(col_width - len(drill_indicator)) + drill_indicator
-                    display_str = display_str.ljust(col_width)
+                    if col == "type" and isinstance(value, int):
+                        minutes = round(value / 60)
+                        display_str = f"{minutes}m".ljust(col_width)
+                    else:
+                        from .utils import sanitize_display_string
+                        display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
                 
                 is_cell_selected = (self.table.selection_mode == 'cell' and 
                                     is_selected and 
@@ -538,16 +580,7 @@ class TUI:
                 if selected_item and selected_item.get("drill_down"):
                     self.drill_down(selected_item["value"], selected_item["column"])
                 elif self.single_select and selected_item is not None:
-                    if self.table.selection_mode == 'cell':
-                        cell_value = self.table.data[self.table.selected_index].get(
-                            self.table.columns[self.table.selected_column]
-                        )
-                        self.selected_output = {
-                            "field": self.table.columns[self.table.selected_column],
-                            "value": cell_value
-                        }
-                    else:
-                        self.selected_output = selected_item
+                    self.selected_output = selected_item
                     
                     # Write to output file to bypass curses stdout interference
                     if self.output_file:

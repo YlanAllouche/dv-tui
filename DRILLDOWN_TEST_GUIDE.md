@@ -79,6 +79,34 @@ Multi-level nesting with objects containing arrays containing objects. Tests dee
 5. Notice "Level 2" in header
 6. Press ESC twice to return to top level
 
+### 4. `test_drilldown_named_array.json`
+Named arrays - objects containing a single top-level array field. The field name is displayed as `[fieldname]` instead of `{}`.
+
+**Example structure:**
+```json
+{
+  "id": 1,
+  "name": "Feature with named array",
+  "metadata": {"Click to know more": [1, 2, 3]}
+}
+```
+
+**How to test:**
+1. Run: `dv test_drilldown_named_array.json`
+2. Press `c` to enter cell mode
+3. Navigate to `metadata` column (marked with `[Click to know more]`)
+4. Press Enter to drill down
+5. View the array values [1, 2, 3] as rows
+6. Press ESC to go back
+
+### 5. `test_drilldown_new_tab.json` (config-based)
+Uses inline config to open drill-down in a new tab instead of replacing current view.
+
+**How to test:**
+1. Run: `dv test_drilldown_new_tab.json`
+2. Drill down to create a new tab
+3. Switch between tabs to compare data
+
 ## Quick Start
 
 Run the test script to try all examples:
@@ -100,6 +128,24 @@ dv test_drilldown_nested_object.json
 dv test_drilldown_multi_level.json
 ```
 
+## Single-Select Mode (-s flag)
+
+When using the `-s` flag, drill-down behavior changes:
+
+1. **Drillable cells**: Pressing Enter drills down (does NOT return to stdout)
+2. **Non-drillable cells**: Pressing Enter outputs the value to stdout and exits
+3. **Row mode**: Pressing Enter outputs the entire row to stdout and exits
+
+**Example workflow:**
+```bash
+dv -s test_drilldown_nested_array.json
+
+# User:
+# 1. Press 'c' for cell mode
+# 2. Navigate to tasks[] cell, press Enter → drills down (no return)
+# 3. Navigate to status cell, press Enter → outputs {"field": "status", "value": "complete"}
+```
+
 ## Navigation Guide
 
 | Key | Action |
@@ -116,5 +162,6 @@ dv test_drilldown_multi_level.json
 
 - `[]` - Cell contains an array (drillable)
 - `{}` - Cell contains an object (drillable)
+- `[fieldname]` - Object contains single array field with name (drillable)
 - Bold text - Drillable cell
 - "Level X" in header - Current drill-down depth
