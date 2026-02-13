@@ -31,6 +31,10 @@ class Table:
         
         # Detect or use provided columns
         self.columns = self._detect_columns(data, columns)
+        
+        # Cache column widths for performance (avoid recalc on every render)
+        self._cached_column_widths = None
+        self._cached_width_for = 0
     
     def _detect_columns(self, data: List[Dict[str, Any]], columns: Optional[List[str]] = None) -> List[str]:
         """Detect columns from data or use provided column list for filtering/reordering."""
@@ -67,6 +71,11 @@ class Table:
     def scroll_up(self) -> None:
         """Scroll up one row."""
         self.selected_index = max(0, self.selected_index - 1)
+    
+    def _invalidate_column_cache(self) -> None:
+        """Invalidate cached column widths (call when data changes)."""
+        self._cached_column_widths = None
+        self._cached_width_for = 0
     
     def get_field_color(self, field_name: str, value: Any) -> int:
         """Get color for a specific field based on configured rules."""
@@ -120,6 +129,10 @@ class Table:
     
     def calculate_column_widths(self, headers: List[str], available_width: int) -> List[int]:
         """Calculate column widths based on content and available space."""
+        # Use cached widths if available and terminal width hasn't changed
+        if self._cached_column_widths is not None and self._cached_width_for == available_width:
+            return self._cached_column_widths
+        
         num_cols = len(self.columns)
         if num_cols == 0:
             return []
@@ -151,22 +164,25 @@ class Table:
         total_max = sum(max_widths)
         if total_max + total_spacing <= available_width:
             # All columns fit, use max widths
-            return max_widths
+            self._cached_column_widths = max_widths
+        else:
+            # Distribute available space proportionally
+            widths = []
+            remaining_width = available_width - total_spacing
+            
+            for i, max_w in enumerate(max_widths):
+                if i == num_cols - 1:
+                    # Last column gets remaining space
+                    widths.append(max(remaining_width, min_width))
+                else:
+                    prop_width = int((max_w / total_max) * remaining_width)
+                    widths.append(max(prop_width, min_width))
+                    remaining_width -= widths[i]
+            
+            self._cached_column_widths = widths
         
-        # Distribute available space proportionally
-        widths = []
-        remaining_width = available_width - total_spacing
-        
-        for i, max_w in enumerate(max_widths):
-            if i == num_cols - 1:
-                # Last column gets remaining space
-                widths.append(max(remaining_width, min_width))
-            else:
-                prop_width = int((max_w / total_max) * remaining_width)
-                widths.append(max(prop_width, min_width))
-                remaining_width -= widths[i]
-        
-        return widths
+        self._cached_width_for = available_width
+        return self._cached_column_widths
     
     def render(self, stdscr, start_y: int, height: int, width: int,
                headers: List[str], column_widths: List[int]) -> None:

@@ -18,7 +18,7 @@ from .data_loaders import (
 )
 from .ui import init_color_pairs, draw_tabs, draw_footer
 from .actions import select_item, play_locator
-from .utils import beautify_filename
+from .utils import beautify_filename, sanitize_display_string
 
 
 @dataclass
@@ -313,9 +313,11 @@ class TUI:
             self.create_tab_from_data(drill_name, nested_data, parent_context)
         else:
             # Save current state to navigation stack
+            # Store table reference for fast restoration (avoids expensive Table recreation on go_back)
             if self.current_tab and self.table:
                 self.current_tab.navigation_stack.append({
-                    "data": self.current_tab.data.copy(),
+                    "table": self.table,
+                    "data": self.current_tab.data,
                     "selected_index": self.table.selected_index,
                     "scroll_offset": self.table.scroll_offset,
                     "selection_mode": self.table.selection_mode,
@@ -343,6 +345,9 @@ class TUI:
         """
         Go back to previous navigation level.
         
+        Optimized to restore cached Table object instead of recreating it.
+        This avoids expensive column detection and color map recalculation.
+        
         Returns:
             True if went back, False if no previous level exists
         """
@@ -354,11 +359,13 @@ class TUI:
         
         previous_state = self.current_tab.navigation_stack.pop()
         
+        # Restore previous state by directly swapping the table
+        # Much faster than recreating Table (avoids _detect_columns, color map rebuild)
+        self.current_tab.table = previous_state["table"]
         self.current_tab.data = previous_state["data"]
         self.current_tab.parent_context = previous_state["parent_context"]
         
-        columns = self.config.columns
-        self.current_tab.table = Table(self.current_tab.data, columns)
+        # Restore selection state
         self.current_tab.table.selected_index = previous_state["selected_index"]
         self.current_tab.table.scroll_offset = previous_state["scroll_offset"]
         self.current_tab.table.selection_mode = previous_state["selection_mode"]
@@ -485,7 +492,6 @@ class TUI:
                         minutes = round(value / 60)
                         display_str = f"{minutes}m".ljust(col_width)
                     else:
-                        from .utils import sanitize_display_string
                         display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
                 
                 is_cell_selected = (self.table.selection_mode == 'cell' and 
