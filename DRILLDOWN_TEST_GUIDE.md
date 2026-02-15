@@ -107,6 +107,34 @@ Uses inline config to open drill-down in a new tab instead of replacing current 
 2. Drill down to create a new tab
 3. Switch between tabs to compare data
 
+### 6. `test_drilldown_comprehensive.json` (all permutations)
+Contains 15 different test cases covering every combination of drillable data types.
+
+**Test cases included:**
+| # | Type | Description |
+|---|------|-------------|
+| 1 | Simple Array | Basic array `[1, 2, 3]` |
+| 2 | Simple Object | Basic object with key-value pairs |
+| 3 | Array of Objects | Arrays containing nested objects with more arrays |
+| 4 | Named Array | Object with single top-level array field |
+| 5 | Nested Object | Multi-level object nesting |
+| 6 | Multi-Level Array | Arrays containing arrays |
+| 7 | Mixed Object | Object with arrays and objects mixed |
+| 8 | Deep Object Nesting | 4+ levels of object nesting |
+| 9 | Deep Array Nesting | Arrays containing objects containing arrays |
+| 10 | Array of Arrays | Matrix-style data |
+| 11 | Empty Array | Tests empty array handling |
+| 12 | Empty Object | Tests empty object handling |
+| 13 | Mixed Drill Path | Complex navigation through different types |
+| 14 | Named Single Value | Named array with single value |
+| 15 | Complex Mixed Structure | Real-world complex nested data |
+
+**How to test:**
+1. Run: `dv test_drilldown_comprehensive.json`
+2. Navigate through different rows to test each type
+3. Try deep nesting on rows 8 and 9 to test depth limits
+4. Test empty structures on rows 11 and 12
+
 ## Quick Start
 
 Run the test script to try all examples:
@@ -126,6 +154,64 @@ dv test_drilldown_nested_object.json
 
 # Test multi-level nesting
 dv test_drilldown_multi_level.json
+
+# Test named arrays
+dv test_drilldown_named_array.json
+
+# Test new tab drill-down
+dv test_drilldown_new_tab.json
+
+# Test all drillable types (comprehensive)
+dv test_drilldown_comprehensive.json
+```
+
+## Drill-Down Depth
+
+### Depth Limits
+- **No hard limit** on drill-down depth
+- Practically limited by available memory (100+ levels possible)
+- Each level saves state to navigation stack for restoration
+
+### Navigation Behavior
+```
+Level 1 (top level)
+    ↓ drill down into []
+Level 2
+    ↓ drill down into {}
+Level 3
+    ↓ drill down into []
+Level 4
+    ...
+```
+
+- Press ESC to go back **one level at a time**
+- Continue pressing ESC to return to top level
+- Header shows `Level X` indicating current depth
+
+### Deep Nesting Examples
+
+**Deep object nesting** (row 8 in comprehensive test):
+```
+root {}
+  ↓ drill down
+    level1 {}
+      ↓ drill down
+        level2 {}
+          ↓ drill down
+            level3 {}
+              ↓ drill down
+                level4 {}
+                  ↓ drill down
+                    data: "You reached the bottom!"
+```
+
+**Deep array nesting** (row 9 in comprehensive test):
+```
+chain []
+  ↓ drill down
+    [Object] with items []
+      ↓ drill down
+        items [1, 2, 3]
 ```
 
 ## Single-Select Mode (-s flag)

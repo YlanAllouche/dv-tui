@@ -8,10 +8,14 @@ echo "Run each command, then press 'c' to enter cell mode, navigate to a drillab
 echo "marked with [] (array), {} (object), or [fieldname] (named array), and press Enter to drill down."
 echo "Press ESC to go back to the previous level."
 echo ""
+echo "⚠️  No hard depth limit - can drill indefinitely (limited by memory only)"
+echo ""
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+echo "=== Basic Test Files ==="
+echo ""
 echo "1. Test nested arrays (projects with tasks)"
 echo "   Command: dv ${SCRIPT_DIR}/test_drilldown_nested_array.json"
 echo ""
@@ -32,6 +36,21 @@ echo "5. Test new tab drill-down (via config)"
 echo "   Command: dv ${SCRIPT_DIR}/test_drilldown_new_tab.json"
 echo ""
 
+echo "=== Advanced Test File ==="
+echo ""
+echo "6. Comprehensive test with ALL drillable type combinations:"
+echo "   Command: dv ${SCRIPT_DIR}/test_drilldown_comprehensive.json"
+echo "   Contains 15 different test cases including:"
+echo "   - Simple arrays & objects"
+echo "   - Arrays of objects"
+echo "   - Named arrays"
+echo "   - Multi-level nesting"
+echo "   - Arrays of arrays"
+echo "   - Empty structures"
+echo "   - Mixed drill paths"
+echo "   - Complex mixed structures"
+echo ""
+
 echo "=== Single-Select Mode Example ==="
 echo "   Command: dv -s ${SCRIPT_DIR}/test_drilldown_nested_array.json"
 echo "   - Drilling continues deeper (no return)"
@@ -49,11 +68,19 @@ echo "  - Press ESC to go back to the previous level"
 echo "  - The header shows 'Level X' to indicate drill-down depth"
 echo ""
 
+echo "=== Drill-Down Depth Behavior ==="
+echo "  - No hard limit on drill-down depth"
+echo "  - Practically limited by memory (100+ levels possible)"
+echo "  - Each level saves state to navigation stack"
+echo "  - ESC goes back one level at a time"
+echo "  - Press ESC enough times to return to top level"
+echo ""
+
 echo "=== Quick Test ==="
 if [ -t 0 ]; then
-    echo "Running first example..."
+    echo "Running comprehensive test..."
     read -p "Press Enter to start or Ctrl+C to exit"
-    dv "${SCRIPT_DIR}/test_drilldown_nested_array.json"
+    dv "${SCRIPT_DIR}/test_drilldown_comprehensive.json"
 else
     echo "Choose one of the commands above to test interactively."
 fi
