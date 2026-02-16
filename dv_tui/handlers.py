@@ -2,6 +2,7 @@ import time
 import curses
 from typing import Dict, Any, List, Callable, Optional, Tuple, TYPE_CHECKING, Union, Set
 from enum import Enum
+from .triggers import TriggerManager
 
 if TYPE_CHECKING:
     from .config import Config
@@ -163,12 +164,13 @@ class KeyHandler:
         self.pre_search_scroll_offset = 0
         
         self.custom_handlers: Dict[int, Callable] = {}
+        self.trigger_manager = TriggerManager()
         
         if config:
             self.load_config(config)
     
     def load_config(self, config: "Config") -> None:
-        """Load keybind configuration."""
+        """Load keybind and trigger configuration."""
         self.keybind_manager.load_config(config)
         
         if hasattr(config, 'binds') and config.binds:
@@ -189,6 +191,70 @@ class KeyHandler:
         keybinds = self.keybind_manager.get_all_keybinds()
         leader = keybinds.get("leader", ord(';'))
         self.leader_key = leader if isinstance(leader, int) else ord(leader)
+        
+        self._load_triggers(config)
+    
+    def _normalize_trigger(self, trigger: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
+        """Normalize trigger to object format (convert string to {command: string})."""
+        if isinstance(trigger, str):
+            return {"command": trigger, "async_": True}
+        return trigger
+    
+    def _load_triggers(self, config: "Config") -> None:
+        """Load triggers from configuration."""
+        if not hasattr(config, 'triggers') or not config.triggers:
+            return
+        
+        triggers = config.triggers
+        
+        if triggers.table:
+            normalized_table = {
+                k: self._normalize_trigger(v) 
+                for k, v in [
+                    ("on_enter", triggers.table.on_enter),
+                    ("on_select", triggers.table.on_select),
+                    ("on_change", triggers.table.on_change)
+                ]
+                if v is not None
+            }
+            self.trigger_manager.set_table_triggers(normalized_table)
+        
+        if triggers.rows:
+            for row_key, row_triggers in triggers.rows.items():
+                try:
+                    row_index = int(row_key)
+                    normalized_row = {
+                        k: self._normalize_trigger(v) 
+                        for k, v in [
+                            ("on_enter", row_triggers.on_enter),
+                            ("on_select", row_triggers.on_select),
+                            ("on_change", row_triggers.on_change)
+                        ]
+                        if v is not None
+                    }
+                    self.trigger_manager.set_row_triggers(row_index, normalized_row)
+                except ValueError:
+                    pass
+        
+        if triggers.cells:
+            for cell_key, cell_triggers in triggers.cells.items():
+                if ":" in cell_key:
+                    parts = cell_key.split(":")
+                    try:
+                        row_index = int(parts[0])
+                        column = parts[1]
+                        normalized_cell = {
+                            k: self._normalize_trigger(v) 
+                            for k, v in [
+                                ("on_enter", cell_triggers.on_enter),
+                                ("on_select", cell_triggers.on_select),
+                                ("on_change", cell_triggers.on_change)
+                            ]
+                            if v is not None
+                        }
+                        self.trigger_manager.set_cell_triggers(row_index, column, normalized_cell)
+                    except ValueError:
+                        pass
     
     def is_quit_key(self, key: int) -> bool:
         """Check if key is a quit key."""
@@ -303,15 +369,21 @@ class KeyHandler:
         
         if self.is_down_key(key):
             table.scroll_down()
+            self._execute_trigger_event("on_change", table)
         elif self.is_up_key(key):
             table.scroll_up()
+            self._execute_trigger_event("on_change", table)
         elif self.is_left_key(key):
             if table.selection_mode == 'cell':
                 table.selected_column = max(0, table.selected_column - 1)
+                self._execute_trigger_event("on_change", table)
         elif self.is_right_key(key):
             if table.selection_mode == 'cell':
                 table.selected_column = min(len(table.columns) - 1, table.selected_column + 1)
+                self._execute_trigger_event("on_change", table)
         elif self.is_enter_key(key):
+            self._execute_trigger_event("on_enter", table, async_exec=False)
+            self._execute_trigger_event("on_select", table)
             if table.selection_mode == 'cell':
                 cell_value = table.data[table.selected_index].get(table.columns[table.selected_column])
                 if table.is_drillable(table.selected_index, table.selected_column):
@@ -410,3 +482,24 @@ class KeyHandler:
                 self.leader_pending = False
                 return True
         return False
+    
+    def _build_trigger_context(self, table, column: Optional[str] = None) -> Dict[str, Any]:
+        """Build context dictionary for trigger execution."""
+        context = {
+            "selected_index": table.selected_index,
+            "selected_column": None,
+            "selected_row": table.selected_item,
+            "selected_cell": None
+        }
+        
+        if table.selection_mode == 'cell' and table.selected_column < len(table.columns):
+            col_name = table.columns[table.selected_column]
+            context["selected_cell"] = table.selected_item.get(col_name)
+            context["selected_column"] = col_name
+        
+        return context
+    
+    def _execute_trigger_event(self, event: str, table, async_exec: bool = True) -> None:
+        """Execute a trigger event."""
+        context = self._build_trigger_context(table)
+        self.trigger_manager.execute_trigger_event(event, context, async_exec)

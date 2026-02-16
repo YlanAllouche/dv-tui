@@ -1,0 +1,10 @@
+{
+    "triggers": {
+        "table": {
+            "on_select": {
+                "command": "echo \"Cell: $DV_SELECTED_CELL, Index: $DV_SELECTED_INDEX\"",
+                "async_": false
+            }
+        }
+    }
+}

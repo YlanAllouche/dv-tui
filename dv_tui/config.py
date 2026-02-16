@@ -60,11 +60,55 @@ CONFIG_SCHEMA = {
                 "table": {
                     "type": "object",
                     "properties": {
-                        "on_enter": {"type": "string"},
-                        "on_select": {"type": "string"},
-                        "on_change": {"type": "string"},
-                        "data": {"type": "string", "enum": ["row", "cell", "table"]},
-                        "async_": {"type": "boolean"},
+                        "on_enter": {
+                            "oneOf": [
+                                {"type": "string"},
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "command": {"type": "string"},
+                                        "function": {"type": "string"},
+                                        "env": {"type": "object"},
+                                        "input": {"type": "string"},
+                                        "cwd": {"type": "string"},
+                                        "async_": {"type": "boolean"}
+                                    }
+                                }
+                            ]
+                        },
+                        "on_select": {
+                            "oneOf": [
+                                {"type": "string"},
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "command": {"type": "string"},
+                                        "function": {"type": "string"},
+                                        "env": {"type": "object"},
+                                        "input": {"type": "string"},
+                                        "cwd": {"type": "string"},
+                                        "async_": {"type": "boolean"}
+                                    }
+                                }
+                            ]
+                        },
+                        "on_change": {
+                            "oneOf": [
+                                {"type": "string"},
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "command": {"type": "string"},
+                                        "function": {"type": "string"},
+                                        "env": {"type": "object"},
+                                        "input": {"type": "string"},
+                                        "cwd": {"type": "string"},
+                                        "async_": {"type": "boolean"}
+                                    }
+                                }
+                            ]
+                        },
+                        "data": {"type": "string", "enum": ["row", "cell", "table"]}
                     }
                 },
                 "rows": {
@@ -72,11 +116,55 @@ CONFIG_SCHEMA = {
                     "additionalProperties": {
                         "type": "object",
                         "properties": {
-                            "on_enter": {"type": "string"},
-                            "on_select": {"type": "string"},
-                            "on_change": {"type": "string"},
-                            "data": {"type": "string", "enum": ["row", "cell", "table"]},
-                            "async_": {"type": "boolean"},
+                            "on_enter": {
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "command": {"type": "string"},
+                                            "function": {"type": "string"},
+                                            "env": {"type": "object"},
+                                            "input": {"type": "string"},
+                                            "cwd": {"type": "string"},
+                                            "async_": {"type": "boolean"}
+                                        }
+                                    }
+                                ]
+                            },
+                            "on_select": {
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "command": {"type": "string"},
+                                            "function": {"type": "string"},
+                                            "env": {"type": "object"},
+                                            "input": {"type": "string"},
+                                            "cwd": {"type": "string"},
+                                            "async_": {"type": "boolean"}
+                                        }
+                                    }
+                                ]
+                            },
+                            "on_change": {
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "command": {"type": "string"},
+                                            "function": {"type": "string"},
+                                            "env": {"type": "object"},
+                                            "input": {"type": "string"},
+                                            "cwd": {"type": "string"},
+                                            "async_": {"type": "boolean"}
+                                        }
+                                    }
+                                ]
+                            },
+                            "data": {"type": "string", "enum": ["row", "cell", "table"]}
                         }
                     }
                 },
@@ -85,11 +173,55 @@ CONFIG_SCHEMA = {
                     "additionalProperties": {
                         "type": "object",
                         "properties": {
-                            "on_enter": {"type": "string"},
-                            "on_select": {"type": "string"},
-                            "on_change": {"type": "string"},
-                            "data": {"type": "string", "enum": ["row", "cell", "table"]},
-                            "async_": {"type": "boolean"},
+                            "on_enter": {
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "command": {"type": "string"},
+                                            "function": {"type": "string"},
+                                            "env": {"type": "object"},
+                                            "input": {"type": "string"},
+                                            "cwd": {"type": "string"},
+                                            "async_": {"type": "boolean"}
+                                        }
+                                    }
+                                ]
+                            },
+                            "on_select": {
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "command": {"type": "string"},
+                                            "function": {"type": "string"},
+                                            "env": {"type": "object"},
+                                            "input": {"type": "string"},
+                                            "cwd": {"type": "string"},
+                                            "async_": {"type": "boolean"}
+                                        }
+                                    }
+                                ]
+                            },
+                            "on_change": {
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "command": {"type": "string"},
+                                            "function": {"type": "string"},
+                                            "env": {"type": "object"},
+                                            "input": {"type": "string"},
+                                            "cwd": {"type": "string"},
+                                            "async_": {"type": "boolean"}
+                                        }
+                                    }
+                                ]
+                            },
+                            "data": {"type": "string", "enum": ["row", "cell", "table"]}
                         }
                     }
                 },
@@ -285,9 +417,9 @@ class ColumnWidthsConfig:
 @dataclass
 class TriggerConfig:
     """Trigger configuration."""
-    on_enter: Optional[str] = None
-    on_select: Optional[str] = None
-    on_change: Optional[str] = None
+    on_enter: Optional[Union[str, Dict[str, Any]]] = None
+    on_select: Optional[Union[str, Dict[str, Any]]] = None
+    on_change: Optional[Union[str, Dict[str, Any]]] = None
     data: Literal["row", "cell", "table"] = "row"
     async_: bool = True
 

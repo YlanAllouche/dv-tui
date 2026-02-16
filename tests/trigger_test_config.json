@@ -1,0 +1,46 @@
+{
+  "triggers": {
+    "table": {
+      "on_select": {
+        "command": "notify-send \"Selected row $DV_SELECTED_INDEX\"",
+        "async_": true
+      },
+      "on_change": {
+        "command": "notify-send \"Moved to row $DV_SELECTED_INDEX\"",
+        "async_": false
+      },
+      "on_enter": {
+        "command": "notify-send \"Entering table\"",
+        "async_": true
+      }
+    },
+    "rows": {
+      "0": {
+        "on_select": {
+          "command": "notify-send \"You selected the first task: $DV_SELECTED_CELL\"",
+          "async_": false
+        }
+      },
+      "3": {
+        "on_select": {
+          "command": "notify-send \"High priority task selected!\"",
+          "async_": false
+        }
+      }
+    },
+    "cells": {
+      "0:name": {
+        "on_select": {
+          "command": "notify-send \"Cell value: $DV_SELECTED_CELL at column $DV_SELECTED_COLUMN\"",
+          "async_": false
+        }
+      },
+      "2:status": {
+        "on_select": {
+          "command": "notify-send \"Task status: $DV_SELECTED_CELL\"",
+          "async_": false
+        }
+      }
+    }
+  }
+}
