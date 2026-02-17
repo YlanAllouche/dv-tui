@@ -159,23 +159,31 @@ class TriggerExecutor:
     def _build_environment(self, context: Dict[str, Any], additional_env: Dict[str, str]) -> Dict[str, str]:
         """Build environment variables from context and additional env."""
         process_env = os.environ.copy()
-        
+
         selected_cell = context.get("selected_cell")
         if selected_cell is not None:
             process_env["DV_SELECTED_CELL"] = str(selected_cell)
-        
+
         selected_row = context.get("selected_row")
         if selected_row is not None:
             process_env["DV_SELECTED_ROW"] = json.dumps(selected_row)
-        
+
         selected_index = context.get("selected_index")
         if selected_index is not None:
             process_env["DV_SELECTED_INDEX"] = str(selected_index)
-        
+
         selected_column = context.get("selected_column")
         if selected_column is not None:
             process_env["DV_SELECTED_COLUMN"] = str(selected_column)
-        
+
+        # Add all additional context variables as environment variables
+        for key, value in context.items():
+            # Skip the standard ones we already handled
+            if key not in ["selected_cell", "selected_row", "selected_index", "selected_column"]:
+                # Only add if key starts with DV_ prefix (to avoid adding internal context vars)
+                if key.startswith("DV_"):
+                    process_env[key] = str(value)
+
         process_env.update(additional_env)
         return process_env
 
@@ -205,8 +213,8 @@ class TriggerManager:
     def get_trigger(self, event: str, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Get the trigger to execute for an event with priority (cell > row > table).
-        
-        Events: on_enter, on_select, on_change
+
+        Events: on_enter, on_select, on_navigate_row, on_navigate_cell, on_startup, on_drilldown, on_backup
         """
         row_index = context.get("selected_index")
         column = context.get("selected_column")

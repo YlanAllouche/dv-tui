@@ -1,5 +1,6 @@
 import time
 import curses
+import json
 from typing import Dict, Any, List, Callable, Optional, Tuple, TYPE_CHECKING, Union, Set
 from enum import Enum
 from .triggers import TriggerManager
@@ -209,33 +210,41 @@ class KeyHandler:
         
         if triggers.table:
             normalized_table = {
-                k: self._normalize_trigger(v) 
+                k: self._normalize_trigger(v)
                 for k, v in [
                     ("on_enter", triggers.table.on_enter),
                     ("on_select", triggers.table.on_select),
-                    ("on_change", triggers.table.on_change)
+                    ("on_navigate_row", triggers.table.on_navigate_row),
+                    ("on_navigate_cell", triggers.table.on_navigate_cell),
+                    ("on_startup", triggers.table.on_startup),
+                    ("on_drilldown", triggers.table.on_drilldown),
+                    ("on_backup", triggers.table.on_backup)
                 ]
                 if v is not None
             }
             self.trigger_manager.set_table_triggers(normalized_table)
-        
+
         if triggers.rows:
             for row_key, row_triggers in triggers.rows.items():
                 try:
                     row_index = int(row_key)
                     normalized_row = {
-                        k: self._normalize_trigger(v) 
+                        k: self._normalize_trigger(v)
                         for k, v in [
                             ("on_enter", row_triggers.on_enter),
                             ("on_select", row_triggers.on_select),
-                            ("on_change", row_triggers.on_change)
+                            ("on_navigate_row", row_triggers.on_navigate_row),
+                            ("on_navigate_cell", row_triggers.on_navigate_cell),
+                            ("on_startup", row_triggers.on_startup),
+                            ("on_drilldown", row_triggers.on_drilldown),
+                            ("on_backup", row_triggers.on_backup)
                         ]
                         if v is not None
                     }
                     self.trigger_manager.set_row_triggers(row_index, normalized_row)
                 except ValueError:
                     pass
-        
+
         if triggers.cells:
             for cell_key, cell_triggers in triggers.cells.items():
                 if ":" in cell_key:
@@ -244,11 +253,15 @@ class KeyHandler:
                         row_index = int(parts[0])
                         column = parts[1]
                         normalized_cell = {
-                            k: self._normalize_trigger(v) 
+                            k: self._normalize_trigger(v)
                             for k, v in [
                                 ("on_enter", cell_triggers.on_enter),
                                 ("on_select", cell_triggers.on_select),
-                                ("on_change", cell_triggers.on_change)
+                                ("on_navigate_row", cell_triggers.on_navigate_row),
+                                ("on_navigate_cell", cell_triggers.on_navigate_cell),
+                                ("on_startup", cell_triggers.on_startup),
+                                ("on_drilldown", cell_triggers.on_drilldown),
+                                ("on_backup", cell_triggers.on_backup)
                             ]
                             if v is not None
                         }
@@ -368,19 +381,27 @@ class KeyHandler:
                 table.selection_mode = 'row'
         
         if self.is_down_key(key):
+            old_index = table.selected_index
             table.scroll_down()
-            self._execute_trigger_event("on_change", table)
+            if table.selected_index != old_index:
+                self._execute_trigger_event("on_navigate_row", table)
         elif self.is_up_key(key):
+            old_index = table.selected_index
             table.scroll_up()
-            self._execute_trigger_event("on_change", table)
+            if table.selected_index != old_index:
+                self._execute_trigger_event("on_navigate_row", table)
         elif self.is_left_key(key):
             if table.selection_mode == 'cell':
+                old_column = table.selected_column
                 table.selected_column = max(0, table.selected_column - 1)
-                self._execute_trigger_event("on_change", table)
+                if table.selected_column != old_column:
+                    self._execute_trigger_event("on_navigate_cell", table)
         elif self.is_right_key(key):
             if table.selection_mode == 'cell':
+                old_column = table.selected_column
                 table.selected_column = min(len(table.columns) - 1, table.selected_column + 1)
-                self._execute_trigger_event("on_change", table)
+                if table.selected_column != old_column:
+                    self._execute_trigger_event("on_navigate_cell", table)
         elif self.is_enter_key(key):
             self._execute_trigger_event("on_enter", table, async_exec=False)
             self._execute_trigger_event("on_select", table)
@@ -503,3 +524,58 @@ class KeyHandler:
         """Execute a trigger event."""
         context = self._build_trigger_context(table)
         self.trigger_manager.execute_trigger_event(event, context, async_exec)
+
+    def trigger_startup_event(self, table, data_source: str, config_file: Optional[str] = None) -> None:
+        """Execute startup trigger event."""
+        context = self._build_trigger_context(table)
+        context["DV_DATA_SOURCE"] = data_source
+        if config_file:
+            context["DV_CONFIG_FILE"] = config_file
+        self.trigger_manager.execute_trigger_event("on_startup", context, async_exec=True)
+
+    def trigger_drilldown_event(self, table, drill_to_context: Dict[str, Any]) -> None:
+        """Execute drilldown trigger event with comprehensive context."""
+        context = self._build_trigger_context(table)
+
+        # Map drilldown context to DV_ prefixed variables
+        key_mapping = {
+            "selected_index": "DRILL_FROM_INDEX",
+            "selected_column": "DRILL_FROM_COLUMN",
+            "selected_cell": "DRILL_FROM_CELL",
+            "level_name": "DRILL_LEVEL_NAME",
+            "depth": "DRILL_DEPTH",
+            "parent_level_index": "PARENT_LEVEL_INDEX",
+            "parent_level_name": "PARENT_LEVEL_NAME",
+            "dataset_size": "DATASET_SIZE",
+            "data_source": "DRILL_DATA_SOURCE",
+        }
+
+        for key, value in drill_to_context.items():
+            if key in key_mapping:
+                context[f"DV_{key_mapping[key]}"] = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
+
+        self.trigger_manager.execute_trigger_event("on_drilldown", context, async_exec=True)
+
+    def trigger_backup_event(self, table, backup_to_context: Dict[str, Any]) -> None:
+        """Execute backup trigger event with comprehensive context."""
+        context = self._build_trigger_context(table)
+
+        # Map backup context to DV_ prefixed variables
+        key_mapping = {
+            "selected_index": "CURRENT_INDEX",
+            "selected_column": "CURRENT_COLUMN",
+            "selected_cell": "CURRENT_CELL",
+            "level_name": "CURRENT_LEVEL_NAME",
+            "depth": "CURRENT_DEPTH",
+            "dataset_size": "DATASET_SIZE",
+            "data_source": "DATA_SOURCE",
+            "previous_level_index": "PREVIOUS_LEVEL_INDEX",
+            "previous_level_name": "PREVIOUS_LEVEL_NAME",
+            "previous_parent_context": "PREVIOUS_PARENT_CONTEXT",
+        }
+
+        for key, value in backup_to_context.items():
+            if key in key_mapping:
+                context[f"DV_{key_mapping[key]}"] = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
+
+        self.trigger_manager.execute_trigger_event("on_backup", context, async_exec=True)

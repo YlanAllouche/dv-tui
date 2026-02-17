@@ -340,6 +340,32 @@ class TUI:
             self.current_tab.table.scroll_offset = 0
             self.current_tab.table.selection_mode = 'row'
             self.current_tab.table.selected_column = 0
+
+            # Fire drilldown trigger with comprehensive navigation context
+            drill_level = len(self.current_tab.navigation_stack)
+            drill_to_context = {
+                # Current view AFTER drilldown (what we just entered)
+                "selected_index": self.current_tab.table.selected_index,
+                "selected_column": self.current_tab.table.selected_column,
+                "selected_cell": self.current_tab.table.selected_item,
+
+                # Level information
+                "level_name": self.current_tab.name + " [drill-down]",
+                "depth": drill_level + 1,
+
+                # Parent level we came FROM
+                "parent_level_index": self.table.selected_index,
+                "parent_level_name": self.current_tab.name,
+
+                # Dataset information
+                "dataset_size": len(nested_data),
+                "data_source": self.current_file,
+            }
+            if self.key_handler:
+                self.key_handler.trigger_drilldown_event(
+                    self.table,
+                    drill_to_context=drill_to_context
+                )
     
     def go_back(self) -> bool:
         """
@@ -370,7 +396,37 @@ class TUI:
         self.current_tab.table.scroll_offset = previous_state["scroll_offset"]
         self.current_tab.table.selection_mode = previous_state["selection_mode"]
         self.current_tab.table.selected_column = previous_state["selected_column"]
-        
+
+        # Fire backup trigger with navigation stack depth after pop
+        backup_level = len(self.current_tab.navigation_stack)
+        previous_level_name = "top level" if not previous_state.get("parent_context") else "nested level"
+        backup_to_context = {
+            # Current view AFTER backup (what we just restored to)
+            "selected_index": self.current_tab.table.selected_index,
+            "selected_column": self.current_tab.table.selected_column,
+            "selected_cell": self.current_tab.table.selected_item,
+
+            # Level information
+            "level_name": self.current_tab.name,
+            "depth": backup_level,
+
+            # Previous level we just LEFT
+            "previous_level_index": previous_state["selected_index"],
+            "previous_level_name": previous_level_name,
+
+            # Dataset information
+            "dataset_size": len(self.current_tab.data),
+            "data_source": self.current_file,
+
+            # Original parent context for reference
+            "previous_parent_context": previous_state.get("parent_context")
+        }
+        if self.key_handler:
+            self.key_handler.trigger_backup_event(
+                self.table,
+                backup_to_context=backup_to_context
+            )
+
         return True
     
     def _get_named_array_label(self, value: Any) -> Optional[str]:
@@ -549,14 +605,22 @@ class TUI:
         draw_footer(self.stdscr, footer_y, keybind_hints, width)
     
     def run(self, stdscr) -> None:
-        """Run the TUI."""
+        """Run TUI."""
         self.init_curses(stdscr)
         self.load_data()
-        
+
         if not self.current_tab or not self.current_tab.data:
             stdscr.addstr(0, 0, "0 items")
             stdscr.getch()
             return
+
+        # Fire startup trigger after data is loaded
+        if self.key_handler:
+            self.key_handler.trigger_startup_event(
+                self.table,
+                data_source=self.current_file,
+                config_file=self.config.config_file
+            )
         
         while True:
             self.check_and_reload()

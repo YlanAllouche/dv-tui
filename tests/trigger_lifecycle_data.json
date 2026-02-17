@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "name": "Project Alpha",
+    "tasks": [
+      {"id": 101, "title": "Design phase", "status": "complete"},
+      {"id": 102, "title": "Implementation", "status": "in_progress"},
+      {"id": 103, "title": "Testing", "status": "pending"}
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Project Beta",
+    "settings": {
+      "owner": "Alice",
+      "priority": "high",
+      "environment": "production"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Project Gamma",
+    "tags": ["urgent", "backend", "api"]
+  }
+]

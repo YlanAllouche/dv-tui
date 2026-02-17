@@ -92,71 +92,7 @@ CONFIG_SCHEMA = {
                                 }
                             ]
                         },
-                        "on_navigate_row": {
-                            "oneOf": [
-                                {"type": "string"},
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "command": {"type": "string"},
-                                        "function": {"type": "string"},
-                                        "env": {"type": "object"},
-                                        "input": {"type": "string"},
-                                        "cwd": {"type": "string"},
-                                        "async_": {"type": "boolean"}
-                                    }
-                                }
-                            ]
-                        },
-                        "on_navigate_cell": {
-                            "oneOf": [
-                                {"type": "string"},
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "command": {"type": "string"},
-                                        "function": {"type": "string"},
-                                        "env": {"type": "object"},
-                                        "input": {"type": "string"},
-                                        "cwd": {"type": "string"},
-                                        "async_": {"type": "boolean"}
-                                    }
-                                }
-                            ]
-                        },
-                        "on_startup": {
-                            "oneOf": [
-                                {"type": "string"},
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "command": {"type": "string"},
-                                        "function": {"type": "string"},
-                                        "env": {"type": "object"},
-                                        "input": {"type": "string"},
-                                        "cwd": {"type": "string"},
-                                        "async_": {"type": "boolean"}
-                                    }
-                                }
-                            ]
-                        },
-                        "on_drilldown": {
-                            "oneOf": [
-                                {"type": "string"},
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "command": {"type": "string"},
-                                        "function": {"type": "string"},
-                                        "env": {"type": "object"},
-                                        "input": {"type": "string"},
-                                        "cwd": {"type": "string"},
-                                        "async_": {"type": "boolean"}
-                                    }
-                                }
-                            ]
-                        },
-                        "on_backup": {
+                        "on_change": {
                             "oneOf": [
                                 {"type": "string"},
                                 {
@@ -212,71 +148,7 @@ CONFIG_SCHEMA = {
                                     }
                                 ]
                             },
-                            "on_navigate_row": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_navigate_cell": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_startup": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_drilldown": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_backup": {
+                            "on_change": {
                                 "oneOf": [
                                     {"type": "string"},
                                     {
@@ -333,71 +205,7 @@ CONFIG_SCHEMA = {
                                     }
                                 ]
                             },
-                            "on_navigate_row": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_navigate_cell": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_startup": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_drilldown": {
-                                "oneOf": [
-                                    {"type": "string"},
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "function": {"type": "string"},
-                                            "env": {"type": "object"},
-                                            "input": {"type": "string"},
-                                            "cwd": {"type": "string"},
-                                            "async_": {"type": "boolean"}
-                                        }
-                                    }
-                                ]
-                            },
-                            "on_backup": {
+                            "on_change": {
                                 "oneOf": [
                                     {"type": "string"},
                                     {
@@ -611,14 +419,10 @@ class TriggerConfig:
     """Trigger configuration."""
     on_enter: Optional[Union[str, Dict[str, Any]]] = None
     on_select: Optional[Union[str, Dict[str, Any]]] = None
-    on_navigate_cell: Optional[Union[str, Dict[str, Any]]] = None
-    on_navigate_row: Optional[Union[str, Dict[str, Any]]] = None
-    on_startup: Optional[Union[str, Dict[str, Any]]] = None
-    on_drilldown: Optional[Union[str, Dict[str, Any]]] = None
-    on_backup: Optional[Union[str, Dict[str, Any]]] = None
+    on_navigate_row: Optional[Union[str, Dict[str, Any]] = None
+    on_navigate_cell: Optional[Union[str, Dict[str, Any]] = None
     data: Literal["row", "cell", "table"] = "row"
     async_: bool = True
-
 
 
 @dataclass
@@ -700,11 +504,7 @@ class Config:
                 "table": None if self.triggers.table is None else {
                     "on_enter": self.triggers.table.on_enter,
                     "on_select": self.triggers.table.on_select,
-                    "on_navigate_row": self.triggers.table.on_navigate_row,
-                    "on_navigate_cell": self.triggers.table.on_navigate_cell,
-                    "on_startup": self.triggers.table.on_startup,
-                    "on_drilldown": self.triggers.table.on_drilldown,
-                    "on_backup": self.triggers.table.on_backup,
+                    "on_change": self.triggers.table.on_change,
                     "data": self.triggers.table.data,
                     "async": self.triggers.table.async_,
                 },
@@ -712,11 +512,7 @@ class Config:
                     k: {
                         "on_enter": v.on_enter,
                         "on_select": v.on_select,
-                        "on_navigate_row": v.on_navigate_row,
-                        "on_navigate_cell": v.on_navigate_cell,
-                        "on_startup": v.on_startup,
-                        "on_drilldown": v.on_drilldown,
-                        "on_backup": v.on_backup,
+                        "on_change": v.on_change,
                         "data": v.data,
                         "async": v.async_,
                     } for k, v in self.triggers.rows.items()
@@ -725,11 +521,7 @@ class Config:
                     k: {
                         "on_enter": v.on_enter,
                         "on_select": v.on_select,
-                        "on_navigate_row": v.on_navigate_row,
-                        "on_navigate_cell": v.on_navigate_cell,
-                        "on_startup": v.on_startup,
-                        "on_drilldown": v.on_drilldown,
-                        "on_backup": v.on_backup,
+                        "on_change": v.on_change,
                         "data": v.data,
                         "async": v.async_,
                     } for k, v in self.triggers.cells.items()
@@ -930,41 +722,29 @@ def load_config(
             result.triggers.table = TriggerConfig(
                 on_enter=td.get("on_enter"),
                 on_select=td.get("on_select"),
-                on_navigate_row=td.get("on_navigate_row") or td.get("on_change"),
-                on_navigate_cell=td.get("on_navigate_cell"),
-                on_startup=td.get("on_startup"),
-                on_drilldown=td.get("on_drilldown"),
-                on_backup=td.get("on_backup"),
+                on_change=td.get("on_change"),
                 data=td.get("data", "row"),
                 async_=td.get("async", True),
             )
-
+        
         if "rows" in triggers_data and triggers_data["rows"]:
             result.triggers.rows = {}
             for key, rd in triggers_data["rows"].items():
                 result.triggers.rows[key] = TriggerConfig(
                     on_enter=rd.get("on_enter"),
                     on_select=rd.get("on_select"),
-                    on_navigate_row=rd.get("on_navigate_row") or rd.get("on_change"),
-                    on_navigate_cell=rd.get("on_navigate_cell"),
-                    on_startup=rd.get("on_startup"),
-                    on_drilldown=rd.get("on_drilldown"),
-                    on_backup=rd.get("on_backup"),
+                    on_change=rd.get("on_change"),
                     data=rd.get("data", "row"),
                     async_=rd.get("async", True),
                 )
-
+        
         if "cells" in triggers_data and triggers_data["cells"]:
             result.triggers.cells = {}
             for key, cd in triggers_data["cells"].items():
                 result.triggers.cells[key] = TriggerConfig(
                     on_enter=cd.get("on_enter"),
                     on_select=cd.get("on_select"),
-                    on_navigate_row=cd.get("on_navigate_row") or cd.get("on_change"),
-                    on_navigate_cell=cd.get("on_navigate_cell"),
-                    on_startup=cd.get("on_startup"),
-                    on_drilldown=cd.get("on_drilldown"),
-                    on_backup=cd.get("on_backup"),
+                    on_change=cd.get("on_change"),
                     data=cd.get("data", "cell"),
                     async_=cd.get("async", True),
                 )
