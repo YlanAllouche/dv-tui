@@ -14,11 +14,11 @@
         "async_": true
       },
       "on_select": {
-        "command": "notify-send \"Selected row $DV_SELECTED_INDEX\"",
+        "command": "notify-send \"Selected row $DV_SELECTED_INDEX (dataset size: $DV_DATASET_SIZE, from $DV_DATA_SOURCE)\"",
         "async_": true
       },
       "on_navigate_row": {
-        "command": "notify-send \"Moved to row $DV_SELECTED_INDEX\"",
+        "command": "notify-send \"Moved to row $DV_SELECTED_INDEX (dataset size: $DV_DATASET_SIZE, from $DV_DATA_SOURCE)\"",
         "async_": false
       }
     }

@@ -510,7 +510,13 @@ class KeyHandler:
             "selected_index": table.selected_index,
             "selected_column": None,
             "selected_row": table.selected_item,
-            "selected_cell": None
+            "selected_cell": None,
+            # Dataset information available to all triggers
+            "DV_DATASET_SIZE": len(table.data),
+            "DV_DATA_SOURCE": getattr(table, 'data_source', ''),
+            # Level information (if available)
+            "DV_LEVEL_NAME": getattr(table, 'level_name', ''),
+            "DV_DEPTH": getattr(table, 'depth', 0),
         }
         
         if table.selection_mode == 'cell' and table.selected_column < len(table.columns):
