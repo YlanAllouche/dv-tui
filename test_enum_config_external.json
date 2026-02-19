@@ -1,0 +1,12 @@
+{
+  "enum": {
+    "status": {
+      "source": "inline",
+      "values": ["todo", "in-progress", "done", "cancelled"]
+    },
+    "priority": {
+      "source": "external",
+      "command": "./test_enum_priority_source.sh"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "enum": {
+    "status": {
+      "source": "inferred"
+    },
+    "priority": {
+      "source": "inferred"
+    }
+  }
+}

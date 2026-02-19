@@ -188,14 +188,23 @@ class CsvDataLoader(DataLoader):
         """Get source info with delimiter."""
         delim_repr = "'" + self.delimiter + "'" if self.delimiter == ',' else f"'{self.delimiter}'"
         return f"CSV file: {self.source} (delimiter: {delim_repr})"
+    
+    def can_refresh(self) -> bool:
+        """CSV files can be refreshed."""
+        return True
+    
+    def refresh(self) -> List[Dict[str, Any]]:
+        """Reload data from file."""
+        return self.load()
 
 
 class StdinDataLoader(DataLoader):
     """Load JSON data from stdin with timeout."""
     
-    def __init__(self, timeout: Optional[float] = 30):
+    def __init__(self, timeout: Optional[float] = 30, command: Optional[str] = None):
         super().__init__("stdin")
         self.timeout = timeout
+        self.command = command
         self._stdin_data = None
     
     def _capture_stdin(self) -> None:
@@ -246,6 +255,43 @@ class StdinDataLoader(DataLoader):
         
         ready, _, _ = select.select([sys.stdin], [], [], timeout)
         return len(ready) > 0
+    
+    def can_refresh(self) -> bool:
+        """Check if this data source supports refresh."""
+        return self.command is not None
+    
+    def refresh(self) -> List[Dict[str, Any]]:
+        """Refresh data by re-running the command."""
+        if not self.can_refresh():
+            raise NotImplementedError("Cannot refresh stdin without command")
+        
+        try:
+            result = subprocess.run(
+                self.command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            data_str = result.stdout
+            
+            try:
+                data = json.loads(data_str)
+                
+                if not isinstance(data, list):
+                    raise Exception(f"JSON from command must be a list of objects, got {type(data).__name__}")
+                
+                return fill_missing_keys(data)
+            except json.JSONDecodeError as e:
+                msg = "Invalid JSON from command output"
+                if hasattr(e, 'lineno'):
+                    msg += f" at line {e.lineno}"
+                if hasattr(e, 'colno') and e.colno is not None:
+                    msg += f", column {e.colno}"
+                msg += f": {e.msg}"
+                raise Exception(msg)
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Command failed: {e}")
 
 
 def get_file_mtime(file_path: str) -> Optional[float]:
@@ -288,7 +334,7 @@ def load_file(file_path: str, delimiter: str = ',') -> List[Dict[str, Any]]:
 
 
 def create_loader(source: str, stdin_timeout: Optional[float] = None,
-                  delimiter: str = ',') -> DataLoader:
+                  delimiter: str = ',', command: Optional[str] = None) -> DataLoader:
     """
     Create appropriate DataLoader based on source type.
 
@@ -296,12 +342,13 @@ def create_loader(source: str, stdin_timeout: Optional[float] = None,
         source: Source string (file path, inline JSON, or 'stdin')
         stdin_timeout: Timeout for stdin in seconds (None = no timeout)
         delimiter: Delimiter for CSV files
+        command: Command to regenerate data (for stdin refresh)
 
     Returns:
         DataLoader instance
     """
     if source == 'stdin':
-        return StdinDataLoader(stdin_timeout)
+        return StdinDataLoader(stdin_timeout, command)
 
     # Check if it's a file descriptor from process substitution
     # These are created by bash's <(...) syntax and should be read as JSON

@@ -36,6 +36,9 @@ CONFIG_SCHEMA = {
                         "escape": {"type": ["integer", "string"]},
                         "backspace": {"type": "array", "items": {"type": ["integer", "string"]}},
                         "toggle_mode": {"type": ["integer", "string"]},
+                        "enum_picker": {"type": ["integer", "string"]},
+                        "enum_cycle_next": {"type": ["integer", "string"]},
+                        "enum_cycle_prev": {"type": ["integer", "string"]},
                     }
                 },
                 "search": {
@@ -658,7 +661,7 @@ class DrillDownConfig:
 @dataclass
 class RefreshConfig:
     """Refresh configuration."""
-    enabled: bool = True
+    enabled: bool = False
     on_trigger: bool = False
     interval: float = 1.0
     command: Optional[str] = None
@@ -1010,7 +1013,7 @@ def load_config(
     if "refresh" in config and config["refresh"]:
         rd = config["refresh"]
         result.refresh = RefreshConfig(
-            enabled=rd.get("enabled", True),
+            enabled=rd.get("enabled", False),
             on_trigger=rd.get("on_trigger", False),
             interval=rd.get("interval", 1.0),
             command=rd.get("command"),

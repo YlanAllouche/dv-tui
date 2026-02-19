@@ -1,0 +1,16 @@
+## 1. Implementation
+- [x] 1.1 Create `EnumChoiceDialog` UI component
+- [x] 1.2 Implement overlay popup display
+- [x] 1.3 Implement enum options list display
+- [x] 1.4 Implement arrow key navigation in enum picker
+- [x] 1.5 Implement Enter to select option
+- [x] 1.6 Implement ESC to cancel
+- [x] 1.7 Implement inline enum source
+- [x] 1.8 Implement inferred enum source (scan column values)
+- [x] 1.9 Implement external enum source (command)
+- [x] 1.10 Add keybind to open enum picker (ctrl-e)
+- [x] 1.11 Add e/E keys to cycle enum values (cell mode only)
+- [x] 1.12 Implement color cycling for all enum fields
+- [x] 1.13 Update displayed value after selection
+- [x] 1.14 Optionally trigger on_change script after enum change
+- [x] 1.15 Support configurable enum picker keybinds

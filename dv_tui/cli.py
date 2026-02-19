@@ -104,13 +104,6 @@ Examples:
     )
     
     parser.add_argument(
-        "--no-refresh",
-        action="store_true",
-        dest="no_refresh",
-        help="Disable auto-refresh"
-    )
-    
-    parser.add_argument(
         "--refresh-interval",
         type=float,
         default=None,
@@ -166,8 +159,6 @@ def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
     refresh_config = {}
     if args.refresh:
         refresh_config["enabled"] = True
-    elif args.no_refresh:
-        refresh_config["enabled"] = False
     
     if args.refresh_interval is not None:
         refresh_config["interval"] = args.refresh_interval

@@ -16,7 +16,7 @@ from .data_loaders import (
     DataLoader, JsonDataLoader, CsvDataLoader, StdinDataLoader,
     create_loader, detect_source
 )
-from .ui import init_color_pairs, draw_tabs, draw_footer
+from .ui import init_color_pairs, draw_tabs, draw_footer, EnumChoiceDialog, get_enum_options
 from .actions import select_item, play_locator
 from .utils import beautify_filename, sanitize_display_string
 
@@ -55,6 +55,7 @@ class TUI:
         self.tabs: List[Tab] = []
         self.last_check_time = 0
         self.check_cooldown = 0.5
+        self.last_refresh_time = 0
         
         self.key_handler: Optional[KeyHandler] = None
         self.loaders: List[DataLoader] = []
@@ -92,9 +93,10 @@ class TUI:
     def _init_loaders(self) -> None:
         """Initialize data loaders and tabs for all files."""
         stdin_timeout = self.config.stdin_timeout
+        command = self.config.refresh.command if self.config.refresh else None
         for i, file_path in enumerate(self.files):
             try:
-                loader = create_loader(file_path, stdin_timeout=stdin_timeout, delimiter=self.delimiter)
+                loader = create_loader(file_path, stdin_timeout=stdin_timeout, delimiter=self.delimiter, command=command)
                 self.loaders.append(loader)
                 
                 # Create tab name
@@ -136,7 +138,8 @@ class TUI:
         
         # Use configured columns if set, otherwise auto-detect from data
         columns = tab.config.columns if tab.config else self.config.columns
-        tab.table = Table(tab.data, columns)
+        enum_config = tab.config.enum if tab.config else self.config.enum
+        tab.table = Table(tab.data, columns, enum_config)
         tab.table.selected_index = tab.selected_index
         tab.table.scroll_offset = tab.scroll_offset
         tab.table.selection_mode = tab.selection_mode
@@ -160,6 +163,85 @@ class TUI:
             return True
         return False
     
+    def refresh_data(self, show_warning: bool = True) -> bool:
+        """
+        Refresh data from the current data source.
+        
+        Args:
+            show_warning: Whether to show a warning message if refresh is not supported
+            
+        Returns:
+            True if refresh was successful, False otherwise
+        """
+        if not self.current_tab or self.active_tab >= len(self.loaders):
+            return False
+        
+        loader = self.loaders[self.active_tab]
+        if not loader:
+            return False
+        
+        if not loader.can_refresh():
+            if show_warning and self.stdscr:
+                from .actions import show_message
+                show_message(self.stdscr, "Cannot refresh piped data without command", timeout=2.0)
+            return False
+        
+        try:
+            tab = self.tabs[self.active_tab]
+            tab.data = loader.refresh()
+            
+            inline_config = load_config_from_inline_json(tab.data)
+            if inline_config:
+                tab_config = load_config(
+                    config_path=self.config.config_file,
+                    inline_config=inline_config,
+                    cli_config={},
+                )
+                tab.config = tab_config
+            else:
+                tab.config = self.config
+            
+            tab.last_mtime = get_file_mtime(self.current_file)
+            
+            columns = tab.config.columns if tab.config else self.config.columns
+            enum_config = tab.config.enum if tab.config else self.config.enum
+            tab.table = Table(tab.data, columns, enum_config)
+            tab.table.selected_index = tab.selected_index
+            tab.table.scroll_offset = tab.scroll_offset
+            tab.table.selection_mode = tab.selection_mode
+            tab.table.selected_column = tab.selected_column
+            return True
+        except Exception as e:
+            if show_warning and self.stdscr:
+                from .actions import show_message
+                show_message(self.stdscr, f"Refresh failed: {str(e)}", timeout=2.0)
+            return False
+    
+    def _check_auto_refresh(self) -> None:
+        """Check if auto-refresh should be triggered based on interval."""
+        if not self.config.refresh or not self.config.refresh.enabled:
+            return
+        
+        interval = self.config.refresh.interval
+        if interval <= 0:
+            return
+        
+        current_time = time.time()
+        if current_time - self.last_refresh_time >= interval:
+            self.last_refresh_time = current_time
+            self.refresh_data(show_warning=False)
+    
+    def _on_trigger(self) -> None:
+        """Callback for trigger events - refresh data if on_trigger is enabled."""
+        if not self.current_tab or not self.current_tab.config:
+            return
+        
+        tab_config = self.current_tab.config
+        if not tab_config.refresh or not tab_config.refresh.on_trigger:
+            return
+        
+        self.refresh_data(show_warning=False)
+    
     def init_curses(self, stdscr) -> None:
         """Initialize curses settings."""
         self.stdscr = stdscr
@@ -168,7 +250,7 @@ class TUI:
         stdscr.timeout(100)
         init_color_pairs()
         
-        self.key_handler = KeyHandler(self.config)
+        self.key_handler = KeyHandler(self.config, on_trigger_callback=self._on_trigger)
         self._setup_custom_handlers()
     
     def cleanup_curses(self) -> None:
@@ -199,6 +281,166 @@ class TUI:
         self.key_handler.register_handler(16, ctrl_p_handler)
         self.key_handler.register_handler(ord('p'), leader_p_handler)
         self.key_handler.register_handler(ord('P'), leader_p_handler)
+    
+    def _handle_enum_picker(self) -> None:
+        """Handle ctrl-e to open enum picker dialog."""
+        self.debug_file.write(f"_handle_enum_picker called\n")
+        self.debug_file.flush()
+        
+        if not self.current_tab or not self.table:
+            self.debug_file.write(f"  SKIPPED: no current_tab or table\n")
+            self.debug_file.flush()
+            return
+        
+        # Only work in cell mode with enum config for current column
+        if self.table.selection_mode != 'cell' or self.table.selected_column >= len(self.table.columns):
+            self.debug_file.write(f"  SKIPPED: mode={self.table.selection_mode}, col={self.table.selected_column}/{len(self.table.columns)}\n")
+            self.debug_file.flush()
+            return
+        
+        field_name = self.table.columns[self.table.selected_column]
+        enum_config = None
+        
+        if self.current_tab.config and self.current_tab.config.enum:
+            enum_config = getattr(self.current_tab.config.enum, field_name, None)
+        
+        if not enum_config:
+            self.debug_file.write(f"  SKIPPED: no enum_config for {field_name}\n")
+            self.debug_file.flush()
+            return
+        
+        # Build context for external commands
+        context = {
+            "selected_index": self.table.selected_index,
+            "selected_column": field_name,
+            "selected_row": self.table.selected_item,
+            "selected_cell": self.table.selected_item.get(field_name) if field_name else None,
+        }
+        
+        # Get enum options
+        options = get_enum_options(enum_config, field_name, self.current_tab.data, context)
+        
+        if not options:
+            self.debug_file.write(f"  SKIPPED: no options\n")
+            self.debug_file.flush()
+            return
+        
+        self.debug_file.write(f"  Showing picker for {field_name} with options: {options}\n")
+        self.debug_file.flush()
+        
+        # Re-render the main window before showing dialog
+        self.stdscr.clear()
+        self.stdscr.refresh()
+        
+        # Show enum picker dialog
+        dialog = EnumChoiceDialog(self.stdscr, options, f"Select {field_name}")
+        selected_value = dialog.show()
+        
+        self.debug_file.write(f"  Picker returned: {selected_value}\n")
+        self.debug_file.flush()
+        
+        if selected_value is not None:
+            # Update cell value
+            self.current_tab.data[self.table.selected_index][field_name] = selected_value
+            
+            # Trigger on_change event if configured
+            self._trigger_enum_change_event(field_name, selected_value)
+    
+    def _handle_enum_cycle(self, key: int) -> None:
+        """Handle e/E keys to cycle through enum values in current cell."""
+        if not self.current_tab or not self.table:
+            return
+        
+        # Only work in cell mode with enum config for current column
+        if self.table.selection_mode != 'cell' or self.table.selected_column >= len(self.table.columns):
+            return
+        
+        field_name = self.table.columns[self.table.selected_column]
+        enum_config = None
+        
+        if self.current_tab.config and self.current_tab.config.enum:
+            enum_config = getattr(self.current_tab.config.enum, field_name, None)
+        
+        if not enum_config:
+            return
+        
+        # Build context for external commands
+        context = {
+            "selected_index": self.table.selected_index,
+            "selected_column": field_name,
+            "selected_row": self.table.selected_item,
+            "selected_cell": self.table.selected_item.get(field_name) if field_name else None,
+        }
+        
+        # Get enum options
+        options = get_enum_options(enum_config, field_name, self.current_tab.data, context)
+        
+        if not options:
+            return
+        
+        # Get current value
+        current_value = str(self.current_tab.data[self.table.selected_index].get(field_name, ""))
+        
+        # Find current value index
+        try:
+            current_index = options.index(current_value)
+        except ValueError:
+            current_index = -1
+        
+        # Determine direction
+        if self.key_handler.is_enum_cycle_next_key(key):
+            # Cycle to next value (e key)
+            new_index = (current_index + 1) % len(options)
+        else:
+            # Cycle to previous value (E key)
+            new_index = (current_index - 1) % len(options)
+        
+        new_value = options[new_index]
+        
+        # Update cell value
+        self.current_tab.data[self.table.selected_index][field_name] = new_value
+        
+        # Trigger on_change event if configured
+        self._trigger_enum_change_event(field_name, new_value)
+    
+    def _trigger_enum_change_event(self, field_name: str, new_value: Any) -> None:
+        """Trigger enum change event if configured."""
+        if not self.current_tab or not self.current_tab.config:
+            return
+        
+        triggers = self.current_tab.config.triggers
+        if not triggers:
+            return
+        
+        # Check if there's a cell-level trigger for on_navigate_cell or on_enter
+        # We'll use on_navigate_cell for enum changes as it's cell-specific
+        cell_key = f"{self.table.selected_index}:{field_name}"
+        if triggers.cells and cell_key in triggers.cells:
+            cell_triggers = triggers.cells[cell_key]
+            if cell_triggers.on_navigate_cell:
+                context = self._build_trigger_context()
+                context["DV_ENUM_FIELD"] = field_name
+                context["DV_ENUM_NEW_VALUE"] = str(new_value)
+                self.key_handler._execute_trigger_event("on_navigate_cell", self.table, async_exec=False)
+    
+    def _build_trigger_context(self) -> Dict[str, Any]:
+        """Build trigger context dictionary."""
+        if not self.table or not self.current_tab:
+            return {}
+        
+        context = {
+            "selected_index": self.table.selected_index,
+            "selected_column": None,
+            "selected_row": self.table.selected_item,
+            "selected_cell": None,
+        }
+        
+        if self.table.selection_mode == 'cell' and self.table.selected_column < len(self.table.columns):
+            col_name = self.table.columns[self.table.selected_column]
+            context["selected_cell"] = self.table.selected_item.get(col_name)
+            context["selected_column"] = col_name
+        
+        return context
     
     def tab_left(self) -> None:
         """Navigate to previous tab."""
@@ -240,7 +482,8 @@ class TUI:
         
         # Use configured columns if set, otherwise auto-detect from data
         columns = self.config.columns
-        tab.table = Table(tab.data, columns)
+        enum_config = self.config.enum
+        tab.table = Table(tab.data, columns, enum_config)
         
         self.tabs.append(tab)
         self.loaders.append(None)  # No loader for inline data
@@ -335,7 +578,8 @@ class TUI:
             self.current_tab.data = nested_data
             self.current_tab.parent_context = parent_context
             columns = self.config.columns
-            self.current_tab.table = Table(self.current_tab.data, columns)
+            enum_config = self.config.enum
+            self.current_tab.table = Table(self.current_tab.data, columns, enum_config)
             self.current_tab.table.selected_index = 0
             self.current_tab.table.scroll_offset = 0
             self.current_tab.table.selection_mode = 'row'
@@ -451,6 +695,9 @@ class TUI:
     
     def render(self) -> None:
         """Render the TUI."""
+        self.debug_file.write(f"render() called\n")
+        self.debug_file.flush()
+        
         self.stdscr.clear()
         
         height, width = self.stdscr.getmaxyx()
@@ -460,7 +707,12 @@ class TUI:
         start_y = 2
         
         if not self.table:
+            self.debug_file.write(f"render() returning early: no table\n")
+            self.debug_file.flush()
             return
+        
+        self.debug_file.write(f"render() proceeding normally\n")
+        self.debug_file.flush()
         
         columns = self.table.columns
         headers = [c.capitalize() for c in columns]
@@ -574,6 +826,9 @@ class TUI:
                         color = self.table.get_status_color(value)
                         if color == curses.A_NORMAL:
                             color = self.table.get_dynamic_color("status", str(value))
+                    else:
+                        # Use enum color cycling for enum fields
+                        color = self.table.get_enum_color(col, str(value))
                     
                     if is_drillable:
                         color = color | curses.A_BOLD
@@ -590,13 +845,17 @@ class TUI:
         footer_y = height - 1
         has_nav_stack = self.current_tab and len(self.current_tab.navigation_stack) > 0
         back_hint = " | ESC go back" if has_nav_stack else ""
+        has_enum = self.current_tab and self.current_tab.config and self.current_tab.config.enum
+        enum_hint = ""
+        if has_enum and self.table.selection_mode == 'cell':
+            enum_hint = " | e/E cycle enum | ^E popup"
         if self.key_handler.mode == Mode.SEARCH:
             keybind_hints = "Type to filter | Tab/S-Tab navigate | ESC exit search | Enter select" + back_hint
         elif self.table.selection_mode == 'cell':
             if len(self.tabs) > 1:
-                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter drill-down/select cell | c: row mode | / search | q quit" + back_hint
+                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter drill-down/select cell | c: row mode | / search | q quit" + enum_hint + back_hint
             else:
-                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter drill-down/select cell | c: row mode | / search | q quit" + back_hint
+                keybind_hints = "j/↓ down | k/↑ up | h/← left cell | l/→ right cell | Enter drill-down/select cell | c: row mode | / search | q quit" + enum_hint + back_hint
         else:
             if len(self.tabs) > 1:
                 keybind_hints = "j/↓ down | k/↑ up | h/← prev tab | l/→ next tab | Enter select row | c: cell mode | / search | q quit" + back_hint
@@ -623,8 +882,20 @@ class TUI:
             )
         
         while True:
+            self.debug_file.write(f"Loop start\n")
+            self.debug_file.flush()
+            
             self.check_and_reload()
+            self.debug_file.write(f"After check_and_reload\n")
+            self.debug_file.flush()
+            
+            self._check_auto_refresh()
+            self.debug_file.write(f"After auto_refresh check\n")
+            self.debug_file.flush()
+            
             self.render()
+            self.debug_file.write(f"After render\n")
+            self.debug_file.flush()
             
             key = stdscr.getch()
             
@@ -635,12 +906,29 @@ class TUI:
                 self.key_handler.update_leader_timeout()
                 continue
             
+            self.debug_file.write(f"Processing key {key}\n")
+            self.debug_file.flush()
+            
             if self.key_handler.is_left_key(key) and self.table.selection_mode != 'cell':
+                self.debug_file.write(f"  -> is_left_key, mode={self.table.selection_mode}\n")
+                self.debug_file.flush()
                 self.tab_left()
             elif self.key_handler.is_right_key(key) and self.table.selection_mode != 'cell':
+                self.debug_file.write(f"  -> is_right_key, mode={self.table.selection_mode}\n")
+                self.debug_file.flush()
                 self.tab_right()
             elif self.key_handler.is_escape_key(key) and self.current_tab and len(self.current_tab.navigation_stack) > 0:
+                self.debug_file.write(f"  -> is_escape_key, nav_stack={len(self.current_tab.navigation_stack)}\n")
+                self.debug_file.flush()
                 self.go_back()
+            elif self.key_handler.is_enum_picker_key(key):
+                self.debug_file.write(f"  -> is_enum_picker_key\n")
+                self.debug_file.flush()
+                self._handle_enum_picker()
+            elif self.key_handler.is_enum_cycle_next_key(key) or self.key_handler.is_enum_cycle_prev_key(key):
+                self.debug_file.write(f"  -> is_enum_cycle_key\n")
+                self.debug_file.flush()
+                self._handle_enum_cycle(key)
             else:
                 should_exit, selected_item = self.key_handler.handle_key(key, self.table, self.terminal_height)
                 
@@ -660,6 +948,8 @@ class TUI:
                     
                     break
         
+        self.debug_file.write(f"Loop exiting normally\n")
+        self.debug_file.flush()
         self.debug_file.close()
         self.cleanup_curses()
         return self.selected_output

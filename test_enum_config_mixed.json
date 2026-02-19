@@ -1,0 +1,14 @@
+{
+  "enum": {
+    "status": {
+      "source": "inline",
+      "values": ["planning", "development", "bugfix", "documentation", "review", "testing", "done"]
+    },
+    "priority": {
+      "source": "inferred"
+    },
+    "type": {
+      "source": "inferred"
+    }
+  }
+}

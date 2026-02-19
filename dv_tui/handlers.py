@@ -36,6 +36,9 @@ class KeybindManager:
                 "escape": 27,
                 "backspace": [263, 127],
                 "toggle_mode": ord('c'),
+                "enum_picker": 5,  # ctrl-e
+                "enum_cycle_next": ord('e'),
+                "enum_cycle_prev": ord('E'),
             },
             "search": {
                 "enter": [ord('\n'), 10],
@@ -56,6 +59,9 @@ class KeybindManager:
                 "escape": 27,
                 "backspace": [263, 127],
                 "toggle_mode": ord('c'),
+                "enum_picker": 5,  # ctrl-e
+                "enum_cycle_next": ord('e'),
+                "enum_cycle_prev": ord('E'),
             }
         }
         
@@ -150,7 +156,7 @@ class KeybindManager:
 class KeyHandler:
     """Handle keybinds and mode management."""
     
-    def __init__(self, config: Optional["Config"] = None):
+    def __init__(self, config: Optional["Config"] = None, on_trigger_callback: Optional[Callable] = None):
         self.keybind_manager = KeybindManager(config)
         self.mode = self.keybind_manager.get_mode()
         self.leader_pending = False
@@ -166,6 +172,7 @@ class KeyHandler:
         
         self.custom_handlers: Dict[int, Callable] = {}
         self.trigger_manager = TriggerManager()
+        self.on_trigger_callback = on_trigger_callback
         
         if config:
             self.load_config(config)
@@ -338,6 +345,27 @@ class KeyHandler:
         if toggle_key is None:
             toggle_key = ord('c')
         return key == (toggle_key if isinstance(toggle_key, int) else toggle_key)
+    
+    def is_enum_picker_key(self, key: int) -> bool:
+        """Check if key opens the enum picker (ctrl-e)."""
+        enum_key = self.keybind_manager.get_keybind("enum_picker")
+        if enum_key is None:
+            enum_key = 5  # ctrl-e is ASCII 5
+        return key == (enum_key if isinstance(enum_key, int) else enum_key)
+    
+    def is_enum_cycle_next_key(self, key: int) -> bool:
+        """Check if key cycles to next enum value (e)."""
+        enum_key = self.keybind_manager.get_keybind("enum_cycle_next")
+        if enum_key is None:
+            enum_key = ord('e')
+        return key == (enum_key if isinstance(enum_key, int) else enum_key)
+    
+    def is_enum_cycle_prev_key(self, key: int) -> bool:
+        """Check if key cycles to previous enum value (E)."""
+        enum_key = self.keybind_manager.get_keybind("enum_cycle_prev")
+        if enum_key is None:
+            enum_key = ord('E')
+        return key == (enum_key if isinstance(enum_key, int) else enum_key)
     
     def is_leader_key(self, key: int) -> bool:
         """Check if key is the leader key."""
@@ -530,6 +558,9 @@ class KeyHandler:
         """Execute a trigger event."""
         context = self._build_trigger_context(table)
         self.trigger_manager.execute_trigger_event(event, context, async_exec)
+        
+        if self.on_trigger_callback:
+            self.on_trigger_callback()
 
     def trigger_startup_event(self, table, data_source: str, config_file: Optional[str] = None) -> None:
         """Execute startup trigger event."""

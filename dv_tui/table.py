@@ -6,7 +6,8 @@ from .utils import sanitize_display_string, Colors
 class Table:
     """Table rendering and data management."""
     
-    def __init__(self, data: List[Dict[str, Any]], columns: Optional[List[str]] = None):
+    def __init__(self, data: List[Dict[str, Any]], columns: Optional[List[str]] = None,
+                 enum_config: Optional[Any] = None):
         self.data = data
         
         self.value_color_map = {}
@@ -28,6 +29,16 @@ class Table:
             "focus": (2, True),
             "active": (3, True),
         }
+        
+        # Store enum configuration for color cycling
+        self.enum_config = enum_config
+        self.enum_fields = set()
+        if enum_config:
+            for attr_name in dir(enum_config):
+                if not attr_name.startswith('_'):
+                    attr_value = getattr(enum_config, attr_name)
+                    if attr_value is not None:
+                        self.enum_fields.add(attr_name)
         
         # Detect or use provided columns
         self.columns = self._detect_columns(data, columns)
@@ -112,6 +123,20 @@ class Table:
         
         if "2025-" in str(status):
             return curses.color_pair(4)
+        
+        return curses.A_NORMAL
+    
+    def get_enum_color(self, field_name: str, value: str) -> int:
+        """Get color for enum fields using dynamic color cycling."""
+        # Check if field has predefined colors in field_colors
+        key = (field_name, str(value).lower())
+        if key in self.field_colors:
+            pair_num, bold = self.field_colors[key]
+            return curses.color_pair(pair_num) | (curses.A_BOLD if bold else 0)
+        
+        # Use dynamic color cycling for enum fields
+        if field_name in self.enum_fields:
+            return self.get_dynamic_color(field_name, str(value))
         
         return curses.A_NORMAL
     
