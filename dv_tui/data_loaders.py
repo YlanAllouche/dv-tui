@@ -222,8 +222,12 @@ class StdinDataLoader(DataLoader):
             raise Exception("No data provided via stdin")
     
     def load(self) -> List[Dict[str, Any]]:
-        """Load JSON data from stdin with timeout."""
-        # Capture stdin data first
+        """Load JSON data from stdin with timeout, or from command if specified."""
+        # If command is provided, use it instead of stdin
+        if self.command is not None:
+            return self._load_from_command()
+        
+        # Otherwise, capture stdin data
         self._capture_stdin()
         
         try:
@@ -242,29 +246,8 @@ class StdinDataLoader(DataLoader):
             msg += f": {e.msg}"
             raise Exception(msg)
     
-    def get_source_info(self) -> str:
-        """Get source info with timeout."""
-        if self.timeout is None or self.timeout == 0:
-            return "Stdin (no timeout)"
-        else:
-            return f"Stdin (timeout: {self.timeout}s)"
-    
-    def _wait_for_stdin_data(self, timeout: float) -> bool:
-        """Wait for data to be available on stdin with timeout."""
-        import select
-        
-        ready, _, _ = select.select([sys.stdin], [], [], timeout)
-        return len(ready) > 0
-    
-    def can_refresh(self) -> bool:
-        """Check if this data source supports refresh."""
-        return self.command is not None
-    
-    def refresh(self) -> List[Dict[str, Any]]:
-        """Refresh data by re-running the command."""
-        if not self.can_refresh():
-            raise NotImplementedError("Cannot refresh stdin without command")
-        
+    def _load_from_command(self) -> List[Dict[str, Any]]:
+        """Load data by executing the command."""
         try:
             result = subprocess.run(
                 self.command,
@@ -292,6 +275,33 @@ class StdinDataLoader(DataLoader):
                 raise Exception(msg)
         except subprocess.CalledProcessError as e:
             raise Exception(f"Command failed: {e}")
+    
+    def get_source_info(self) -> str:
+        """Get source info with timeout."""
+        if self.command is not None:
+            return f"Command: {self.command}"
+        elif self.timeout is None or self.timeout == 0:
+            return "Stdin (no timeout)"
+        else:
+            return f"Stdin (timeout: {self.timeout}s)"
+    
+    def _wait_for_stdin_data(self, timeout: float) -> bool:
+        """Wait for data to be available on stdin with timeout."""
+        import select
+        
+        ready, _, _ = select.select([sys.stdin], [], [], timeout)
+        return len(ready) > 0
+    
+    def can_refresh(self) -> bool:
+        """Check if this data source supports refresh."""
+        return self.command is not None
+    
+    def refresh(self) -> List[Dict[str, Any]]:
+        """Refresh data by re-running the command."""
+        if not self.can_refresh():
+            raise NotImplementedError("Cannot refresh stdin without command")
+        
+        return self._load_from_command()
 
 
 def get_file_mtime(file_path: str) -> Optional[float]:

@@ -678,7 +678,7 @@ class Config:
     triggers: Optional[TriggersConfig] = None
     enum: Optional[EnumConfig] = None
     drill_down: Optional[DrillDownConfig] = None
-    refresh: Optional[RefreshConfig] = None
+    refresh: RefreshConfig = field(default_factory=RefreshConfig)
     tabs: Optional[List[str]] = None
     
     config_file: Optional[str] = None

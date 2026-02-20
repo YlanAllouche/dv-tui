@@ -229,9 +229,12 @@ def main(args: Optional[List[str]] = None) -> int:
     tab_field = cli_config.get("tab_field", "_config.tabs")
     
     if not files:
-        print("Error: No input file provided", file=sys.stderr)
-        print("Usage: dv <file.json>", file=sys.stderr)
-        return 1
+        # Allow no files when using -c command
+        if not parsed_args.command:
+            print("Error: No input file provided", file=sys.stderr)
+            print("Usage: dv <file.json>", file=sys.stderr)
+            return 1
+        files = ["stdin"]  # Use stdin as placeholder
     
     # Load and validate inline config from first file
     # Note: File descriptors from process substitution (<(...)) can only be read once,
