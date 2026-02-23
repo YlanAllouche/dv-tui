@@ -1,11 +1,11 @@
 ## 1. Implementation
-- [ ] 1.1 Implement CSV data loader using Python csv module
-- [ ] 1.2 Detect CSV file by extension
-- [ ] 1.3 Parse comma delimiter (default)
-- [ ] 1.4 Support custom delimiter via config
-- [ ] 1.5 Treat first row as headers (default)
-- [ ] 1.6 Support skipping headers via config
-- [ ] 1.7 Convert CSV rows to internal table format
-- [ ] 1.8 Ensure search works with CSV data
-- [ ] 1.9 Ensure selection works with CSV data
-- [ ] 1.10 Ensure triggers work with CSV data
+- [x] 1.1 Implement CSV data loader using Python csv module
+- [x] 1.2 Detect CSV file by extension
+- [x] 1.3 Parse comma delimiter (default)
+- [x] 1.4 Support custom delimiter via config
+- [x] 1.5 Treat first row as headers (default)
+- [x] 1.6 Support skipping headers via config
+- [x] 1.7 Convert CSV rows to internal table format
+- [x] 1.8 Ensure search works with CSV data
+- [x] 1.9 Ensure selection works with CSV data
+- [x] 1.10 Ensure triggers work with CSV data

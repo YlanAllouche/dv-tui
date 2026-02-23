@@ -685,6 +685,7 @@ class Config:
     single_select: bool = False
     stdin_timeout: Optional[float] = None
     delimiter: str = ','
+    skip_headers: bool = False
     tab_name: Optional[str] = None
     binds: Optional[List[Dict[str, str]]] = None
     unbinds: Optional[List[Dict[str, str]]] = None
@@ -1024,6 +1025,9 @@ def load_config(
     
     if "delimiter" in config:
         result.delimiter = config["delimiter"]
+    
+    if "skip_headers" in config:
+        result.skip_headers = config["skip_headers"]
     
     if "tab_name" in config:
         result.tab_name = config["tab_name"]

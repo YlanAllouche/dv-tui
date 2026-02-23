@@ -165,16 +165,25 @@ class JsonDataLoader(DataLoader):
 class CsvDataLoader(DataLoader):
     """Load CSV data from file."""
     
-    def __init__(self, source: str, delimiter: str = ','):
+    def __init__(self, source: str, delimiter: str = ',', skip_headers: bool = False):
         super().__init__(source)
         self.delimiter = delimiter
+        self.skip_headers = skip_headers
     
     def load(self) -> List[Dict[str, Any]]:
         """Load CSV data from file."""
         try:
             with open(self.source, 'r', newline='') as f:
-                reader = csv.DictReader(f, delimiter=self.delimiter)
-                data = list(reader)
+                if self.skip_headers:
+                    reader = csv.reader(f, delimiter=self.delimiter)
+                    rows = list(reader)
+                    if not rows:
+                        return []
+                    headers = [f"col_{i}" for i in range(len(rows[0]))]
+                    data = [dict(zip(headers, row)) for row in rows]
+                else:
+                    reader = csv.DictReader(f, delimiter=self.delimiter)
+                    data = list(reader)
             
             return fill_missing_keys(data)
         except FileNotFoundError:
@@ -187,7 +196,8 @@ class CsvDataLoader(DataLoader):
     def get_source_info(self) -> str:
         """Get source info with delimiter."""
         delim_repr = "'" + self.delimiter + "'" if self.delimiter == ',' else f"'{self.delimiter}'"
-        return f"CSV file: {self.source} (delimiter: {delim_repr})"
+        headers_info = ", skip headers" if self.skip_headers else ", with headers"
+        return f"CSV file: {self.source} (delimiter: {delim_repr}{headers_info})"
     
     def can_refresh(self) -> bool:
         """CSV files can be refreshed."""
@@ -312,7 +322,7 @@ def get_file_mtime(file_path: str) -> Optional[float]:
         return None
 
 
-def load_file(file_path: str, delimiter: str = ',') -> List[Dict[str, Any]]:
+def load_file(file_path: str, delimiter: str = ',', skip_headers: bool = False) -> List[Dict[str, Any]]:
     """
     Load data from a file (JSON or CSV).
     Detects format based on file extension.
@@ -320,6 +330,7 @@ def load_file(file_path: str, delimiter: str = ',') -> List[Dict[str, Any]]:
     Args:
         file_path: Path to the file
         delimiter: Delimiter for CSV files (default: ',')
+        skip_headers: Skip first row as headers for CSV files (default: False)
     
     Returns:
         List of dictionaries
@@ -337,14 +348,14 @@ def load_file(file_path: str, delimiter: str = ',') -> List[Dict[str, Any]]:
         loader = JsonDataLoader(file_path)
         return loader.load()
     elif ext == '.csv':
-        loader = CsvDataLoader(file_path, delimiter=delimiter)
+        loader = CsvDataLoader(file_path, delimiter=delimiter, skip_headers=skip_headers)
         return loader.load()
     else:
         raise Exception(f"Unsupported file format: {ext}")
 
 
 def create_loader(source: str, stdin_timeout: Optional[float] = None,
-                  delimiter: str = ',', command: Optional[str] = None) -> DataLoader:
+                  delimiter: str = ',', command: Optional[str] = None, skip_headers: bool = False) -> DataLoader:
     """
     Create appropriate DataLoader based on source type.
 
@@ -353,6 +364,7 @@ def create_loader(source: str, stdin_timeout: Optional[float] = None,
         stdin_timeout: Timeout for stdin in seconds (None = no timeout)
         delimiter: Delimiter for CSV files
         command: Command to regenerate data (for stdin refresh)
+        skip_headers: Skip first row as headers for CSV files
 
     Returns:
         DataLoader instance
@@ -373,7 +385,7 @@ def create_loader(source: str, stdin_timeout: Optional[float] = None,
         if path.suffix.lower() == '.json':
             return JsonDataLoader(source)
         elif path.suffix.lower() == '.csv':
-            return CsvDataLoader(source, delimiter=delimiter)
+            return CsvDataLoader(source, delimiter=delimiter, skip_headers=skip_headers)
         else:
             raise Exception(f"Unsupported file format: {path.suffix}")
 

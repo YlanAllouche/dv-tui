@@ -97,6 +97,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--skip-headers",
+        action="store_true",
+        help="Skip first row as headers for CSV files"
+    )
+    
+    parser.add_argument(
         "--refresh",
         action="store_true",
         default=None,
@@ -173,6 +179,9 @@ def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
     
     if args.delimiter != ',':
         cli_config["delimiter"] = args.delimiter
+    
+    if args.skip_headers:
+        cli_config["skip_headers"] = True
     
     if args.tab_name:
         cli_config["tab_name"] = args.tab_name

@@ -43,11 +43,12 @@ class TUI:
     """TUI engine with curses wrapper."""
     
     def __init__(self, files: List[str], single_select: bool = False, config: Optional[Config] = None, 
-                 config_path: Optional[str] = None, delimiter: str = ',', tab_field: str = '_config.tabs'):
+                 config_path: Optional[str] = None, delimiter: str = ',', skip_headers: bool = False, tab_field: str = '_config.tabs'):
         self.files = files
         self.active_tab = 0
         self.single_select = single_select
         self.delimiter = delimiter
+        self.skip_headers = skip_headers
         self.tab_field = tab_field
         self.tab_name = config.tab_name if config else None
         self.selected_output = None
@@ -94,9 +95,11 @@ class TUI:
         """Initialize data loaders and tabs for all files."""
         stdin_timeout = self.config.stdin_timeout
         command = self.config.refresh.command if self.config.refresh else None
+        delimiter = self.config.delimiter
+        skip_headers = self.config.skip_headers
         for i, file_path in enumerate(self.files):
             try:
-                loader = create_loader(file_path, stdin_timeout=stdin_timeout, delimiter=self.delimiter, command=command)
+                loader = create_loader(file_path, stdin_timeout=stdin_timeout, delimiter=delimiter, command=command, skip_headers=skip_headers)
                 self.loaders.append(loader)
                 
                 # Create tab name
