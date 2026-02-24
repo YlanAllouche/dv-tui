@@ -1,0 +1,4 @@
+name;status;priority;type
+Task 1;todo;high;work
+Task 2;in progress;medium;study
+Task 3;done;low;work

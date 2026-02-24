@@ -1,0 +1,6 @@
+id,name,category,value,active
+1,Product A,electronics,99.99,yes
+2,Product B,clothing,49.99,no
+3,Product C,electronics,199.99,yes
+4,Product D,books,19.99,yes
+5,Product E,clothing,29.99,no
