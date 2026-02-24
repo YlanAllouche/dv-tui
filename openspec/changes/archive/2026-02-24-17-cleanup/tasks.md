@@ -1,0 +1,18 @@
+## 1. Implementation
+- [x] 1.1 Remove open_in_nvim_async method
+- [x] 1.2 Remove hardcoded paths (~/share/, ~/.cache/nvim/)
+- [x] 1.3 Create example trigger config for nvim
+- [x] 1.4 Remove hardcoded jelly_play_yt command
+- [x] 1.5 Create example trigger config for play_locator
+- [x] 1.6 Remove hardcoded field expectations (type, status, summary)
+- [x] 1.7 Remove hardcoded color mappings
+- [x] 1.8 Make color mappings configurable
+- [x] 1.9 Remove /tmp/dv_keys.txt debug logging
+- [x] 1.10 Remove /tmp/dv_play.log debug logging
+- [x] 1.11 Improve error messages
+- [x] 1.12 Improve error handling
+- [x] 1.13 Add type hints to all functions
+- [x] 1.14 Add type hints to all class methods
+- [x] 1.15 Improve variable naming for clarity
+- [x] 1.16 Remove unused imports
+- [x] 1.17 Remove unused code

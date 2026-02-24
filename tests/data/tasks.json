@@ -1,0 +1,6 @@
+[
+    {"id": 1, "title": "Fix login bug", "priority": "high", "status": "open", "assignee": "Alice"},
+    {"id": 2, "title": "Add dark mode support", "priority": "medium", "status": "in progress", "assignee": "Bob"},
+    {"id": 3, "title": "Update documentation", "priority": "low", "status": "pending", "assignee": "Charlie"},
+    {"id": 4, "title": "Optimize database queries", "priority": "high", "status": "open", "assignee": "Diana"}
+]

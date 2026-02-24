@@ -1,0 +1,12 @@
+{
+  "enum": {
+    "status": {
+      "source": "inline",
+      "values": ["todo", "in-progress", "done", "cancelled"]
+    },
+    "priority": {
+      "source": "inline",
+      "values": ["low", "medium", "high", "critical"]
+    }
+  }
+}

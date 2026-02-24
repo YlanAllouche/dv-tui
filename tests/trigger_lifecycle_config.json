@@ -1,0 +1,26 @@
+{
+  "triggers": {
+    "table": {
+      "on_startup": {
+        "command": "notify-send \"TUI Started\" \"Loading: $DV_DATA_SOURCE (dataset size: $DV_DATASET_SIZE)\"",
+        "async_": true
+      },
+      "on_drilldown": {
+        "command": "notify-send \"Drill Down\" \"Level: $DV_DRILL_LEVEL_NAME (depth $DV_DRILL_DEPTH, size $DV_DATASET_SIZE, from row $DV_PARENT_LEVEL_INDEX)\"",
+        "async_": true
+      },
+      "on_backup": {
+        "command": "notify-send \"Backup\" \"To level: $DV_CURRENT_LEVEL_NAME (depth $DV_CURRENT_DEPTH, size $DV_DATASET_SIZE) from row $DV_PREVIOUS_LEVEL_INDEX in $DV_PREVIOUS_LEVEL_NAME)\"",
+        "async_": true
+      },
+      "on_select": {
+        "command": "notify-send \"Selected row $DV_SELECTED_INDEX (dataset size: $DV_DATASET_SIZE, from $DV_DATA_SOURCE)\"",
+        "async_": true
+      },
+      "on_navigate_row": {
+        "command": "notify-send \"Moved to row $DV_SELECTED_INDEX (dataset size: $DV_DATASET_SIZE, from $DV_DATA_SOURCE)\"",
+        "async_": false
+      }
+    }
+  }
+}

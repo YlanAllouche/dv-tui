@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "Feature with named array",
+    "metadata": {"Click to know more": [1, 2, 3]}
+  },
+  {
+    "id": 2,
+    "name": "Another feature",
+    "info": {"Details available": ["option1", "option2", "option3"]}
+  },
+  {
+    "id": 3,
+    "name": "Simple array",
+    "tags": ["tag1", "tag2", "tag3"]
+  },
+  {
+    "id": 4,
+    "name": "Nested object",
+    "config": {"enabled": true, "priority": "high"}
+  }
+]

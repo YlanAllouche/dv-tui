@@ -1,0 +1,27 @@
+[
+  {
+    "_config": {
+      "keybinds": {
+        "normal": {
+          "leader": ";",
+          "search": "s",
+          "quit": ["Q"]
+        }
+      },
+      "columns": ["type", "status", "summary"]
+    },
+    "type": "work",
+    "status": "focus",
+    "summary": "Inline config test - item 1"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Inline config test - item 2"
+  },
+  {
+    "type": "personal",
+    "status": "focus",
+    "summary": "Inline config test - item 3"
+  }
+]

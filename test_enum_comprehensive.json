@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "summary": "Design system architecture",
+    "status": "planning",
+    "priority": "high",
+    "type": "feature"
+  },
+  {
+    "id": 2,
+    "summary": "Implement authentication",
+    "status": "development",
+    "priority": "critical",
+    "type": "feature"
+  },
+  {
+    "id": 3,
+    "summary": "Fix CSS rendering issue",
+    "status": "bugfix",
+    "priority": "high",
+    "type": "bug"
+  },
+  {
+    "id": 4,
+    "summary": "Add user documentation",
+    "status": "documentation",
+    "priority": "medium",
+    "type": "docs"
+  },
+  {
+    "id": 5,
+    "summary": "Performance optimization",
+    "status": "development",
+    "priority": "medium",
+    "type": "feature"
+  },
+  {
+    "id": 6,
+    "summary": "Security audit",
+    "status": "review",
+    "priority": "critical",
+    "type": "security"
+  },
+  {
+    "id": 7,
+    "summary": "Unit test coverage",
+    "status": "testing",
+    "priority": "low",
+    "type": "testing"
+  }
+]

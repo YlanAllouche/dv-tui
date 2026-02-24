@@ -1,0 +1,13 @@
+[
+  {
+    "_config": {
+      "columns": "this_should_be_an_array_not_string",
+      "drill_down": {
+        "enabled": "not_a_boolean"
+      }
+    },
+    "type": "work",
+    "status": "active",
+    "summary": "Invalid config test"
+  }
+]

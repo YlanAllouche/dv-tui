@@ -1,86 +1,315 @@
 # dv-tui
 
-Terminal UI for browsing dataview queries with neovim triggers, fuzzy search, and media playback.
+Terminal UI for browsing and filtering JSON/CSV data with keyboard navigation.
 
-
-*(Example screenshot with data from [personal-share-example](https://github.com/YlanAllouche/personal-share-example) as displayed in this [dashboard](https://ylanallouche.github.io/dashboard-md/) as well)*
 ![screenshot](./screen1.png)
 
-> 💡 **Universalization in progress:** This tool is currently idiosyncratic, but see the `initial-universalizing-effort` branch for ongoing work to generalize it for broader use cases.
+## Overview
 
-## Features
+dv-tui (data viewer - terminal user interface) is a curses-based terminal UI for viewing and interacting with JSON and CSV data. It provides a fast, keyboard-driven interface for browsing, searching, and filtering structured data.
 
-- **Multi-tab browsing** - Load multiple JSON files as tabs
-- **Vim keybindings** - Navigate with j/k, h/l for tabs
+Key features include:
+
+- **Multi-tab browsing** - Load multiple files and switch between tabs
+- **Vim keybindings** - Navigate with j/k, h/l for tabs and cells
 - **Fuzzy search** - Real-time filtering with smart character-distance scoring
-- **Neovim integration** - Opens files at specified line numbers via remote server
-- **Auto-reload** - Detects and reloads modified JSON files (if not using single-select)
-- **Media playback** - Launches `jelly_play_yt` via "locator" field (Ctrl+P or ;p)
-- **Color-coded display** - Dynamic color cycling for statuses; special colors for "focus", "active", and dates
-- **Type handling** - Supports string types ("work", "study") and integer durations (shown as minutes)
+- **Auto-reload** - Detects and reloads modified files
+- **Color-coded display** - Dynamic color cycling for statuses and types
+- **Type handling** - Supports string types and integer durations (shown as minutes)
 - **Smart sanitization** - Cleans control characters and truncates long strings
 - **Tab indicators** - Shows item counts; search mode shows filtered vs. total count
-- **Leader key shortcuts** - Semicolon (`;`) as leader for extended commands
-- **Three display modes** - Normal, search, and single-select (`-s` flag)
-
-## Usage
-
-```bash
-dv                          # Interactive selection from ~/share/_tmp/
-dv file.json                # Open specific file
-dv file1.json file2.json    # Multiple files as tabs
-dv -s file.json             # Single-select mode (exit after trigerring)
-```
-
-or in tmux as a popup window
-
-```bash
-
-bind-key e run-shell "tmux display-popup -w 90% -h 80%  -E ~/.local/bin/dv -s ~/share/_tmp/query1.json ~/share/_tmp/query2.json"
-```
+- **Multiple file formats** - Supports JSON and CSV data files
+- **Drill-down navigation** - Navigate into nested lists and objects
+- **Enum cell editing** - Cycle through pre-defined values in cells
+- **Custom keybindings** - Configure keys via CLI or config file
+- **Trigger system** - Execute commands on row/cell selection and navigation events
 
 ## Installation
 
+### From PyPI
+
 ```bash
-cp dv.py ~/.local/bin/dv # or whereever in your PATH
-
+pip install dv-tui
 ```
 
-## JSON Structure
+### From Source
 
-Expected array of objects with optional fields:
+```bash
+# Clone the repository
+git clone https://github.com/YlanAllouche/dv-tui.git
+cd dv-tui
 
-```json
-[
-  {
-    "type": "work",           // string or int (duration in seconds, shown as minutes)
-    "status": "active",       // colors: "focus" (magenta), "active" (green), dates (yellow), or custom
-    "summary": "Description", // used for search and display
-    "file": "path/to/file",   // path relative to ~/share/ for nvim
-    "line": 42,               // line number (0-indexed, displayed as line+1)
-    "locator": "url_or_id"    // passed to jelly_play_yt
-  }
-]
+# Install in development mode
+pip install -e .
 ```
+
+### Verify Installation
+
+```bash
+dv --help
+```
+
+## Dependencies
+
+dv-tui has **no external dependencies** - it uses only Python standard library modules:
+- `curses` - Terminal UI (included with Python on most systems)
+- `json` - JSON parsing
+- `csv` - CSV parsing
+- `argparse` - Command line argument parsing
+
+On some Linux distributions, you may need to install curses separately:
+- Ubuntu/Debian: `sudo apt-get install python3-curses`
+- Fedora: `sudo dnf install python3-curses`
+- macOS: Included with Python
+
+## Usage
+
+### Command Line
+
+Basic usage:
+
+```bash
+# View a JSON file
+dv file.json
+
+# View a CSV file
+dv data.csv
+
+# View multiple files as tabs
+dv file1.json file2.json
+
+# View data from stdin
+cat data.json | dv
+
+# View data from a command output
+query.sh | dv
+```
+
+Single-select mode (exit after selecting):
+
+```bash
+dv -s file.json
+```
+
+Custom column display:
+
+```bash
+dv --columns "name,status,age" file.json
+```
+
+Auto-refresh from command:
+
+```bash
+dv -c "query.sh" --refresh --refresh-interval 5
+```
+
+### Tmux Integration
+
+Use dv-tui as a tmux popup window:
+
+```bash
+bind-key e run-shell "tmux display-popup -w 90% -h 80% -E ~/.local/bin/dv -s ~/share/_tmp/query1.json"
+```
+
+### Interactive Selection
+
+Prompt for file from directory:
+
+```bash
+# Interactive selection from ~/share/_tmp/
+dv
+
+# Custom directory
+dv ~/data/*.json
+```
+
+## Configuration
+
+dv-tui supports configuration through multiple sources:
+
+1. **Config file**: `~/.config/dv/config.json` or custom path via `--config`
+2. **Inline JSON**: Configuration embedded in first data item via `_config` field
+3. **Command line**: Override via flags like `--columns`, `--bind`, etc.
+
+Configuration priority: CLI flags > inline JSON > config file > defaults
+
+For detailed configuration options, see [CONFIG.md](CONFIG.md).
 
 ## Keyboard Shortcuts
+
+### Normal Mode
 
 | Key | Action |
 |-----|--------|
 | `j` / `↓` | Move down |
 | `k` / `↑` | Move up |
-| `h` / `←` | Previous tab |
-| `l` / `→` | Next tab |
-| `Enter` | Open in neovim |
-| `Ctrl+P` / `;p` | Play media |
+| `h` / `←` | Previous tab (or left cell in cell mode) |
+| `l` / `→` | Next tab (or right cell in cell mode) |
 | `/` | Enter search mode |
-| `Tab` / `↓` | Next result (search mode) |
-| `Shift+Tab` / `↑` | Previous result (search mode) |
-| `Esc` | Exit search (restores position) |
-| `Backspace` | Delete search character |
+| `c` | Toggle row/cell selection mode |
+| `Enter` | Select row/cell |
 | `q` | Quit |
 
+### Search Mode
 
-## Notes
+| Key | Action |
+|-----|--------|
+| Type | Filter results |
+| `Tab` / `↓` | Next result |
+| `Shift+Tab` / `↑` | Previous result |
+| `Esc` | Exit search (restores position) |
+| `Backspace` | Delete search character |
+| `Enter` | Select result |
 
-Highly idiosyncratic—tailored to Dataview-based personal knowledge management. Assumes: files relative to `~/share/`, neovim with remote server at `~/.cache/nvim/share.pipe`, and `jelly_play_yt` at `~/.local/bin/`.
+### Cell Mode (with enum configuration)
+
+| Key | Action |
+|-----|--------|
+| `e` | Cycle to next enum value |
+| `E` | Cycle to previous enum value |
+| `Ctrl+E` | Open enum picker dialog |
+
+For detailed keybinding customization, see [KEYBINDS.md](KEYBINDS.md).
+
+## Library Usage
+
+dv-tui can be used as a Python library in your applications:
+
+```python
+from dv_tui import TableUI
+
+data = [
+    {"name": "Alice", "status": "active", "age": 30},
+    {"name": "Bob", "status": "inactive", "age": 25},
+]
+
+# Create TUI
+tui = TableUI(data)
+
+# Handle selections
+def on_enter(selected_row):
+    print(f"Selected: {selected_row}")
+
+tui.bind_key('Enter', on_enter)
+
+# Run
+selected = tui.run()
+```
+
+For detailed API documentation and examples, see [LIBRARY.md](LIBRARY.md).
+
+## JSON Structure
+
+dv-tui expects JSON data as an array of objects:
+
+```json
+[
+  {
+    "type": "work",
+    "status": "active",
+    "summary": "Task description",
+    "file": "path/to/file",
+    "line": 42,
+    "locator": "url_or_id"
+  }
+]
+```
+
+### Special Fields
+
+- `_config`: Embedded configuration (see [CONFIG.md](CONFIG.md))
+- Any field with nested objects/arrays is drillable
+
+## CSV Structure
+
+CSV files are automatically converted to JSON objects:
+
+```csv
+name,status,age
+Alice,active,30
+Bob,inactive,25
+```
+
+## Advanced Features
+
+### Drill-Down Navigation
+
+Press `Enter` on cells containing arrays or nested objects to drill into them. Use `Esc` to go back.
+
+### Enum Cell Editing
+
+Configure enum fields to cycle through values:
+
+```json
+{
+  "_config": {
+    "enum": {
+      "status": {
+        "source": "inline",
+        "values": ["todo", "in-progress", "done"]
+      }
+    }
+  }
+}
+```
+
+### Trigger System
+
+Execute commands on events:
+
+```json
+{
+  "_config": {
+    "triggers": {
+      "table": {
+        "on_enter": "echo $DV_SELECTED_ROW | jq",
+        "on_select": "open_file $DV_SELECTED_INDEX"
+      }
+    }
+  }
+}
+```
+
+### Custom Keybindings
+
+Bind custom actions via config or CLI:
+
+```bash
+dv --bind "v:view_details"
+```
+
+## Examples
+
+See the `examples/` directory for complete example scripts:
+
+- `basic_library_usage.py` - Basic Python library usage
+- `custom_keybindings.py` - Custom keybinding configuration
+- `programmatic_updates.py` - Updating data programmatically
+
+## Development
+
+### Running Tests
+
+```bash
+pytest tests/
+```
+
+### Test Data
+
+Sample test data is provided in `tests/data/`:
+
+```bash
+dv tests/data/work_tasks.json
+dv tests/data/study_tasks.json
+dv tests/data/mixed_tasks.csv
+```
+
+See `tests/data/README.md` for more testing examples.
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+
+MIT License - see LICENSE file for details

@@ -1,0 +1,20 @@
+[
+  {
+    "type": "work",
+    "status": "pending",
+    "summary": "Modified at 1771958539",
+    "priority": "high"
+  },
+  {
+    "type": "work",
+    "status": "pending",
+    "summary": "Review PR #1771958539",
+    "priority": "medium"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Learn patterns #1771958539",
+    "priority": "low"
+  }
+]

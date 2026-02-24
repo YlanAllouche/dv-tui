@@ -1,0 +1,11 @@
+## 1. Implementation
+- [x] 1.1 Implement detection of array/object cells
+- [x] 1.2 Add visual indicator for drillable cells
+- [x] 1.3 Implement drill-down on Enter in cell mode
+- [x] 1.4 Support drill-down to same tab (default behavior)
+- [x] 1.5 Support drill-down to new tab (via config)
+- [x] 1.6 Implement drill-down configuration (field, inherit_flags, extra_flags, new_tab)
+- [x] 1.7 Implement navigation stack for back functionality
+- [x] 1.8 Add back keybind (e.g., ESC in drill-down view)
+- [x] 1.9 Pass parent data context to child view
+- [x] 1.10 Display navigation indicator when in drill-down view

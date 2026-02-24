@@ -171,7 +171,11 @@ class SimpleInitiativeTUI:
             with open(self.json_file, 'r') as f:
                 self.initiatives = json.load(f)
             # Update modification time after successful load
-            self.last_mtime = os.stat(self.json_file).st_mtime
+            # File descriptors (e.g., /dev/fd/63 from process substitution) may not support stat
+            try:
+                self.last_mtime = os.stat(self.json_file).st_mtime
+            except (OSError, IOError):
+                self.last_mtime = None
         except FileNotFoundError:
             raise Exception(f"{self.json_file} not found")
         except json.JSONDecodeError:
@@ -204,54 +208,24 @@ class SimpleInitiativeTUI:
         curses.start_color()
         curses.use_default_colors()
         
-        # Color pairs: (fg, bg)
-        curses.init_pair(1, curses.COLOR_CYAN, -1)      # Type
-        curses.init_pair(2, curses.COLOR_MAGENTA, -1)   # Focus status
-        curses.init_pair(3, curses.COLOR_GREEN, -1)     # Active status
-        curses.init_pair(4, curses.COLOR_YELLOW, -1)    # Date status
-        curses.init_pair(5, curses.COLOR_BLUE, -1)      # Work type
-        curses.init_pair(6, curses.COLOR_CYAN, -1)      # Study type
-        curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_BLUE)  # Selected
-        curses.init_pair(8, curses.COLOR_RED, -1)       # Title
-        
-        # Header color pairs with reversed foreground/background
-        curses.init_pair(13, curses.COLOR_BLACK, curses.COLOR_BLUE)   # Type header (blue bg)
-        curses.init_pair(14, curses.COLOR_BLACK, curses.COLOR_MAGENTA)  # Status header (magenta bg)
-        curses.init_pair(15, curses.COLOR_BLACK, curses.COLOR_RED)    # Summary header (red bg)
+        # Basic color pairs
+        curses.init_pair(1, curses.COLOR_CYAN, -1)
+        curses.init_pair(2, curses.COLOR_MAGENTA, -1)
+        curses.init_pair(3, curses.COLOR_GREEN, -1)
+        curses.init_pair(4, curses.COLOR_YELLOW, -1)
+        curses.init_pair(5, curses.COLOR_BLUE, -1)
+        curses.init_pair(6, curses.COLOR_CYAN, -1)
+        curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_BLUE)
+        curses.init_pair(8, curses.COLOR_RED, -1)
+        curses.init_pair(13, curses.COLOR_BLACK, curses.COLOR_BLUE)
+        curses.init_pair(14, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
+        curses.init_pair(15, curses.COLOR_BLACK, curses.COLOR_RED)
         
         # Dynamic color pairs for value cycling (pairs 9-12)
-        # Cycle through: RED, BLUE, YELLOW, and reuse if needed
         colors_to_use = [curses.COLOR_RED, curses.COLOR_BLUE, curses.COLOR_YELLOW, curses.COLOR_CYAN]
         for i, color in enumerate(colors_to_use):
             curses.init_pair(9 + i, color, -1)
         
-    def get_type_color(self, type_val):
-        """Get color pair for type"""
-        # Handle both string and integer types (int = duration in seconds)
-        if isinstance(type_val, int):
-            # For duration (in seconds), use a neutral color
-            return curses.color_pair(1)
-        
-        type_lower = str(type_val).lower()
-        if type_lower == "work":
-            return curses.color_pair(5) | curses.A_BOLD
-        elif type_lower == "study":
-            return curses.color_pair(6) | curses.A_BOLD
-        else:
-            return curses.color_pair(1)
-    
-    def get_status_color(self, status: str):
-        """Get color pair for status"""
-        status_lower = str(status).lower()
-        if status_lower == "focus":
-            return curses.color_pair(2) | curses.A_BOLD
-        elif status_lower == "active":
-            return curses.color_pair(3) | curses.A_BOLD
-        elif "2025-" in str(status):
-            return curses.color_pair(4)
-        else:
-            return curses.A_NORMAL
-    
     def get_dynamic_color(self, field_name: str, value: str):
         """
         Get color pair for a value, cycling through available colors.
@@ -339,19 +313,34 @@ class SimpleInitiativeTUI:
             # Use filtered indices for display
             display_indices = self.filtered_indices
         else:
-            # Styled headers
-            headers = ["Type", "Status", "Summary"]
-            col_widths = [8, 12, width - 22]  # Adjust widths based on terminal
+            # Detect columns from data dynamically
+            all_columns = set()
+            for item in self.initiatives:
+                all_columns.update(item.keys())
+            headers = sorted(all_columns)
+            
+            # Calculate column widths (distribute evenly)
+            num_cols = len(headers)
+            if num_cols > 0:
+                spacing = 1
+                total_spacing = (num_cols - 1) * spacing
+                col_widths = []
+                available_width = width - total_spacing
+                for i, header in enumerate(headers):
+                    if i == num_cols - 1:
+                        # Last column gets remaining space
+                        col_widths.append(max(1, available_width))
+                    else:
+                        # Distribute evenly
+                        col_width = max(8, available_width // num_cols)
+                        col_widths.append(col_width)
+                        available_width -= col_width
+            else:
+                col_widths = []
             
             x = 0
             for i, (header, w) in enumerate(zip(headers, col_widths)):
-                if i == 0:  # Type
-                    color = curses.color_pair(13) | curses.A_BOLD
-                elif i == 1:  # Status
-                    color = curses.color_pair(14) | curses.A_BOLD
-                else:  # Summary
-                    color = curses.color_pair(15) | curses.A_BOLD
-                
+                color = curses.color_pair(13) | curses.A_BOLD
                 stdscr.addstr(1, x, header.ljust(w), color)
                 x += w + 1
             
@@ -359,8 +348,8 @@ class SimpleInitiativeTUI:
             # Use all indices for display
             display_indices = list(range(len(self.initiatives)))
         
-        # Prepare column widths
-        col_widths = [8, 12, width - 22]
+        # Use calculated column widths
+        col_widths = [8, 12, width - 22] if not self.search_mode else []
         
         for display_row in range(viewport_height):
             # Get the index into display_indices
@@ -375,21 +364,20 @@ class SimpleInitiativeTUI:
             initiative = self.initiatives[item_index]
             y = start_y + display_row
             
-            # Get content for the full line
-            # Handle type: can be string or int (duration in seconds)
-            type_val = initiative.get("type", "")
-            if isinstance(type_val, int):
-                # Convert seconds to minutes (rounded)
-                minutes = round(type_val / 60)
-                type_str = f"{minutes}m".ljust(8)
-            else:
-                type_str = sanitize_display_string(str(type_val), max_length=7).ljust(8)
-
-            status_str = sanitize_display_string(str(initiative.get("status", "")), max_length=11).ljust(12)
-            summary = sanitize_display_string(initiative.get("summary", ""), max_length=col_widths[2]-1)
+            # Get content for each column dynamically
+            display_values = []
+            for col, col_width in zip(headers, col_widths):
+                value = initiative.get(col, "")
+                if isinstance(value, int):
+                    # Convert duration to minutes
+                    minutes = round(value / 60)
+                    display_str = f"{minutes}m"
+                else:
+                    display_str = sanitize_display_string(str(value), max_length=col_width - 1)
+                display_values.append(display_str.ljust(col_width))
             
             # Build the full line content
-            full_line = f"{type_str} {status_str} {summary}"
+            full_line = " ".join(display_values)
             full_line = full_line.ljust(width - 1)  # Fill to edge
             
             # For selected item, use full line inversion
@@ -405,37 +393,23 @@ class SimpleInitiativeTUI:
             if is_selected:
                 stdscr.addstr(y, 0, full_line, curses.A_REVERSE)
             else:
-                # Normal display with colors
+                # Normal display without hardcoded field-specific colors
                 x = 0
-                
-                # Type with color (no cycling for durations)
-                type_val = initiative.get("type", "")
-                stdscr.addstr(y, x, type_str, self.get_type_color(type_val))
-                x += len(type_str) + 1
-                
-                # Status with color (use dynamic color rotation)
-                status_val = str(initiative.get("status", ""))
-                status_color = self.get_status_color(status_val)
-                
-                # If the status is not a special known status, use dynamic color rotation
-                if status_color == curses.A_NORMAL:
-                    # Use dynamic color rotation for unknown status values
-                    status_color = self.get_dynamic_color("status", status_val)
-                
-                stdscr.addstr(y, x, status_str, status_color)
-                x += len(status_str) + 1
-                
-                # Summary
-                stdscr.addstr(y, x, summary)
+                for col, display_str in zip(headers, display_values):
+                    # Use dynamic color cycling for all columns
+                    value = initiative.get(col, "")
+                    color = self.get_dynamic_color(col, str(value))
+                    stdscr.addstr(y, x, display_str, color)
+                    x += len(display_str) + 1
         
         # Display keybind hints at the bottom
         footer_y = height - 1
         if self.search_mode:
             keybind_hints = "Type to filter | Tab/S-Tab navigate | ESC exit search | Enter select"
         elif len(self.json_files) > 1:
-            keybind_hints = "j/↓ down | k/↑ up | h/← prev tab | l/→ next tab | / search | Enter edit | C-p play | q quit"
+            keybind_hints = "j/↓ down | k/↑ up | h/← prev tab | l/→ next tab | / search | Enter select | q quit"
         else:
-            keybind_hints = "j/↓ down | k/↑ up | / search | Enter edit | C-p play | q quit"
+            keybind_hints = "j/↓ down | k/↑ up | / search | Enter select | q quit"
         try:
             stdscr.addstr(footer_y, 0, keybind_hints, curses.A_DIM)
         except curses.error:
@@ -443,71 +417,7 @@ class SimpleInitiativeTUI:
         
         stdscr.refresh()
     
-    def open_in_nvim_async(self, initiative: Dict[str, Any]):
-        """Open file in nvim using remote server asynchronously, relative to ~/share/"""
-        file_path = initiative.get("file", "")
-        line = initiative.get("line", 0)
-        
-        if not file_path:
-            return
-        
-        # Build full path relative to ~/share/
-        share_path = Path.home() / "share" / file_path
-        
-        if not share_path.exists():
-            # Try without the leading slash if present
-            clean_path = file_path.lstrip('/')
-            share_path = Path.home() / "share" / clean_path
-            
-        if not share_path.exists():
-            return  # Silently fail for async operation
-        
-        # Build the remote command to open and focus the file at specific line
-        socket_path = Path.home() / ".cache" / "nvim" / "share.pipe"
-        
-        # Always use the line value + 1 (even when line is 0)
-        target_line = line + 1
-        
-        # Use --remote-expr to execute the edit command with line navigation
-        cmd = [
-            "nvim",
-            "--server", str(socket_path),
-            "--remote-expr", f"execute('edit +{target_line} {str(share_path)}')"
-        ]
-        
-        # Fire and forget - completely async
-        try:
-            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, 
-                           start_new_session=True, close_fds=True)
-        except Exception:
-            pass  # Silently fail for async operation
-    
-    def play_locator(self, initiative: Dict[str, Any]):
-        """Run jelly_play_yt on the content of the 'locator' field"""
-        locator = initiative.get("locator", "")
-        
-        # Log for debugging
-        with open('/tmp/dv_play.log', 'a') as f:
-            f.write(f"play_locator called. Locator: '{locator}'\n")
-        
-        if not locator:
-            with open('/tmp/dv_play.log', 'a') as f:
-                f.write(f"  -> No locator field\n")
-            return
-        
-        # Fire and forget - completely async
-        try:
-            cmd = [str(Path.home() / ".local" / "bin" / "jelly_play_yt"), str(locator)]
-            with open('/tmp/dv_play.log', 'a') as f:
-                f.write(f"  -> Running: {' '.join(cmd)}\n")
-            subprocess.Popen(cmd, 
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                           start_new_session=True, close_fds=True)
-            with open('/tmp/dv_play.log', 'a') as f:
-                f.write(f"  -> Process spawned\n")
-        except Exception as e:
-            with open('/tmp/dv_play.log', 'a') as f:
-                f.write(f"  -> Error: {e}\n")
+
     
     def run(self, stdscr):
         """Run the curses TUI"""
@@ -526,10 +436,7 @@ class SimpleInitiativeTUI:
         # Set non-blocking input with timeout (100ms)
         stdscr.timeout(100)
         
-        # Debug logging for key detection
-        debug_file = open('/tmp/dv_keys.txt', 'a')
-        debug_file.write("=== Session Start ===\n")
-        debug_file.flush()
+
         
         while True:
             # Check if file has been modified and reload if necessary
@@ -539,10 +446,7 @@ class SimpleInitiativeTUI:
             
             key = stdscr.getch()
             
-            # Log all key presses
-            if key != -1:
-                debug_file.write(f"Key: {key:4d} | '{chr(key) if 32 <= key < 127 else '?'}'  | Semicolon? {key == 59} | C-p? {key == 16}\n")
-                debug_file.flush()
+
             
             # -1 means no key was pressed (timeout occurred)
             if key == -1:
@@ -559,20 +463,9 @@ class SimpleInitiativeTUI:
                 self.leader_timeout = time.time()
                 continue
             
-            # Direct Ctrl+P keybind (ASCII 16)
-            if key == 16:  # Ctrl+P
-                if 0 <= self.selected_index < len(self.initiatives):
-                    self.play_locator(self.initiatives[self.selected_index])
-                continue
-            
             # If we're waiting for the second key in a leader sequence
             if self.leader_pending:
                 self.leader_pending = False
-                
-                if key == ord('p') or key == ord('P'):
-                    # ; + p: play locator field
-                    if 0 <= self.selected_index < len(self.initiatives):
-                        self.play_locator(self.initiatives[self.selected_index])
                 continue
             
             # Handle search mode keybindings
@@ -590,18 +483,15 @@ class SimpleInitiativeTUI:
                     # Select the current filtered item and open it
                     if self.filtered_indices:
                         self.selected_index = self.filtered_indices[self.search_selected_index]
-                        # Exit search mode
-                        self.search_mode = False
-                        self.search_query = ""
-                        self.filtered_indices = []
-                        self.search_selected_index = 0
-                        self.scroll_offset = 0
-                        # Open the selected item in nvim
-                        if 0 <= self.selected_index < len(self.initiatives):
-                            self.open_in_nvim_async(self.initiatives[self.selected_index])
-                            # In single-select mode, exit after opening
-                            if self.single_select:
-                                break
+                    # Exit search mode
+                    self.search_mode = False
+                    self.search_query = ""
+                    self.filtered_indices = []
+                    self.search_selected_index = 0
+                    self.scroll_offset = 0
+                    # In single-select mode, exit after selection
+                    if self.single_select:
+                        break
                 elif key == curses.KEY_UP or key == 353:  # UP arrow or Shift+Tab (KEY_BTAB)
                     self.search_selected_index = max(0, self.search_selected_index - 1)
                     self.scroll_offset = max(0, self.scroll_offset - 1)
@@ -615,16 +505,18 @@ class SimpleInitiativeTUI:
                 elif 32 <= key < 127:  # Printable ASCII characters
                     # Add character to search query
                     self.search_query += chr(key)
-                    # Refilter
-                    matched = fuzzy_filter(self.initiatives, self.search_query, "summary")
+                    # Refilter on first column
+                    search_col = headers[0] if headers else "summary"
+                    matched = fuzzy_filter(self.initiatives, self.search_query, search_col)
                     self.filtered_indices = [self.initiatives.index(item) for item in matched]
                     self.search_selected_index = 0
                     self.scroll_offset = 0
                 elif key == curses.KEY_BACKSPACE or key == 127:  # Backspace
                     if self.search_query:
                         self.search_query = self.search_query[:-1]
-                        # Refilter
-                        matched = fuzzy_filter(self.initiatives, self.search_query, "summary")
+                        # Refilter on first column
+                        search_col = headers[0] if headers else "summary"
+                        matched = fuzzy_filter(self.initiatives, self.search_query, search_col)
                         self.filtered_indices = [self.initiatives.index(item) for item in matched]
                         self.search_selected_index = min(self.search_selected_index, len(self.filtered_indices) - 1) if self.filtered_indices else 0
                         self.scroll_offset = 0
@@ -662,12 +554,9 @@ class SimpleInitiativeTUI:
                     self.selected_index = 0  # Reset selection
                     self.scroll_offset = 0  # Reset scroll
             elif key == ord('\n') or key == curses.KEY_ENTER or key == 10:
-                if 0 <= self.selected_index < len(self.initiatives):
-                    # Send command without suspending curses
-                    self.open_in_nvim_async(self.initiatives[self.selected_index])
-                    # In single-select mode, exit after opening
-                    if self.single_select:
-                        break
+                # In single-select mode, exit after selection
+                if self.single_select:
+                    break
 
 if __name__ == "__main__":
     import sys
@@ -682,67 +571,23 @@ if __name__ == "__main__":
         sys.argv.remove('-s')
     
     if len(sys.argv) < 2:
-        # List JSON files from ~/share/_tmp/
-        tmp_dir = Path.home() / "share" / "_tmp"
-        if not tmp_dir.exists():
-            print(f"Directory {tmp_dir} not found")
-            sys.exit(1)
-        
-        json_file_list = list(tmp_dir.glob("*.json"))
-        if not json_file_list:
-            print("No JSON files found in ~/share/_tmp/")
-            sys.exit(1)
-        
-        def select_file(stdscr):
-            selected = 0
-            curses.curs_set(0)
-            stdscr.keypad(True)
-            
-            while True:
-                stdscr.clear()
-                height, width = stdscr.getmaxyx()
-                
-                # Title
-                title = f"{len(json_file_list)} files in ~/share/_tmp/"
-                stdscr.addstr(0, 0, title, curses.A_BOLD)
-                
-                # Display files with beautified names
-                visible_items = min(len(json_file_list), height - 3)
-                for i in range(visible_items):
-                    if i >= len(json_file_list):
-                        break
-                    
-                    beautified = beautify_filename(json_file_list[i].name)
-                    line_text = f"{beautified}"
-                    
-                    if i == selected:
-                        stdscr.addstr(i + 2, 2, line_text, curses.A_REVERSE)
-                    else:
-                        stdscr.addstr(i + 2, 2, line_text)
-                
-                key = stdscr.getch()
-                
-                if key == ord('q') or key == ord('Q'):
-                    return None
-                elif key == curses.KEY_UP or key == ord('k'):
-                    selected = max(0, selected - 1)
-                elif key == curses.KEY_DOWN or key == ord('j'):
-                    selected = min(len(json_file_list) - 1, selected + 1)
-                elif key == ord('\n') or key == curses.KEY_ENTER or key == 10:
-                    return str(json_file_list[selected])
-        
-        selected_file = curses.wrapper(select_file)
-        if selected_file is None:
-            sys.exit(0)
-        
-        json_files = [selected_file]
-    else:
-        # Accept multiple JSON files as arguments
-        json_files = sys.argv[1:]
+        print("Error: No input file provided", file=sys.stderr)
+        print("Usage: dv <file.json>", file=sys.stderr)
+        sys.exit(1)
+    
+    # Accept multiple JSON files as arguments
+    json_files = sys.argv[1:]
     
     try:
         tui = SimpleInitiativeTUI(json_files, single_select)
         curses.wrapper(tui.run)
+    except FileNotFoundError as e:
+        print(f"Error: File not found - {e.filename}", file=sys.stderr)
+        print(f"Please check the file path and try again.", file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in file - {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

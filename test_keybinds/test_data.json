@@ -1,0 +1,62 @@
+[
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Implement keybind system",
+    "priority": "high"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Learn Rust language",
+    "priority": "medium"
+  },
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Review pull requests",
+    "priority": "high"
+  },
+  {
+    "type": "personal",
+    "status": "focus",
+    "summary": "Morning exercise",
+    "priority": "low"
+  },
+  {
+    "type": "work",
+    "status": "active",
+    "summary": "Team standup meeting",
+    "priority": "medium"
+  },
+  {
+    "type": "study",
+    "status": "focus",
+    "summary": "Read documentation",
+    "priority": "medium"
+  },
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Write unit tests",
+    "priority": "high"
+  },
+  {
+    "type": "personal",
+    "status": "active",
+    "summary": "Plan weekend activities",
+    "priority": "low"
+  },
+  {
+    "type": "work",
+    "status": "focus",
+    "summary": "Debug production issue",
+    "priority": "high"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Watch tutorial video",
+    "priority": "low"
+  }
+]

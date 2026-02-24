@@ -1,0 +1,18 @@
+{
+  "columns": ["status", "summary", "type"],
+  "column_widths": {
+    "status": 15,
+    "type": 10
+  },
+  "keybinds": {
+    "normal": {
+      "leader": 59
+    }
+  },
+  "colors": {
+    "type": {
+      "work": [5, true],
+      "study": [6, true]
+    }
+  }
+}

@@ -1,0 +1,67 @@
+[
+  {
+    "_config": {
+      "tab_name": "All Tasks",
+      "columns": ["task", "project", "status", "hours"],
+      "colors": {
+        "status": {
+          "done": [2, true],
+          "in-progress": [4, true],
+          "pending": [8, true]
+        }
+      },
+      "keybinds": {
+        "normal": {
+          "left": [104, 260],
+          "right": [108, 261]
+        }
+      }
+    },
+    "task": "Design API",
+    "project": "Project A",
+    "status": "done",
+    "hours": 4
+  },
+  {
+    "task": "Implement UI",
+    "project": "Project A",
+    "status": "in-progress",
+    "hours": 8
+  },
+  {
+    "task": "Write tests",
+    "project": "Project A",
+    "status": "pending",
+    "hours": 2
+  },
+  {
+    "task": "Review code",
+    "project": "Project B",
+    "status": "done",
+    "hours": 3
+  },
+  {
+    "task": "Create documentation",
+    "project": "Project B",
+    "status": "in-progress",
+    "hours": 5
+  },
+  {
+    "task": "Deploy to production",
+    "project": "Project B",
+    "status": "pending",
+    "hours": 2
+  },
+  {
+    "task": "Fix bug #123",
+    "project": "Project C",
+    "status": "done",
+    "hours": 1
+  },
+  {
+    "task": "Add new feature",
+    "project": "Project C",
+    "status": "in-progress",
+    "hours": 6
+  }
+]

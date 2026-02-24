@@ -1,0 +1,6 @@
+name,status,priority,type,assigned_to
+Task 1,todo,high,work,Alice
+Task 2,in progress,medium,study,Bob
+Task 3,done,low,work,Alice
+Task 4,todo,high,study,Charlie
+Task 5,in progress,medium,work,Bob

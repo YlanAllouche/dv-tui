@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Project A",
+    "type": "work",
+    "status": "active",
+    "priority": "high",
+    "summary": "Build new dashboard"
+  },
+  {
+    "name": "Project B",
+    "type": "study",
+    "status": "focus",
+    "priority": "medium",
+    "summary": "Learn advanced Python"
+  },
+  {
+    "name": "Project C",
+    "type": "work",
+    "status": "active",
+    "priority": "low",
+    "summary": "Fix login bug"
+  }
+]

@@ -1,0 +1,119 @@
+[
+  {
+    "id": 1,
+    "name": "Simple Array",
+    "values": [1, 2, 3, 4, 5]
+  },
+  {
+    "id": 2,
+    "name": "Simple Object",
+    "config": {"enabled": true, "priority": "high"}
+  },
+  {
+    "id": 3,
+    "name": "Array of Objects",
+    "users": [
+      {"id": 1, "name": "Alice", "roles": ["admin", "user"]},
+      {"id": 2, "name": "Bob", "roles": ["user"]},
+      {"id": 3, "name": "Charlie", "roles": ["moderator"]}
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Named Array",
+    "metadata": {"Available Options": ["Option A", "Option B", "Option C"]}
+  },
+  {
+    "id": 5,
+    "name": "Nested Object",
+    "settings": {
+      "database": {"host": "localhost", "port": 5432},
+      "cache": {"enabled": true, "ttl": 3600}
+    }
+  },
+  {
+    "id": 6,
+    "name": "Multi-Level Array",
+    "levels": [
+      ["Level 1-1", "Level 1-2"],
+      ["Level 2-1", "Level 2-2"],
+      ["Level 3-1", "Level 3-2"]
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Object with Mixed",
+    "structure": {
+      "tags": ["important", "urgent"],
+      "priority": 1,
+      "assignee": {"id": 10, "name": "Alice"}
+    }
+  },
+  {
+    "id": 8,
+    "name": "Deep Nesting - Object",
+    "root": {
+      "level1": {
+        "level2": {
+          "level3": {
+            "level4": {
+              "data": "You reached the bottom!"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": 9,
+    "name": "Deep Nesting - Array",
+    "chain": [
+      {"items": [1, 2, 3]},
+      {"items": [4, 5, 6]},
+      {"items": [7, 8, 9]}
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Array of Arrays",
+    "matrix": [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+  },
+  {
+    "id": 11,
+    "name": "Empty Array",
+    "items": []
+  },
+  {
+    "id": 12,
+    "name": "Empty Object",
+    "config": {}
+  },
+  {
+    "id": 13,
+    "name": "Mixed Drill Path",
+    "workflow": {
+      "steps": [
+        {"name": "Step 1", "config": {"timeout": 60}},
+        {"name": "Step 2", "options": ["A", "B", "C"]},
+        {"name": "Step 3", "params": {"key": "value"}}
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "name": "Named Array with Single Value",
+    "info": {"Click for details": "Detailed information here"}
+  },
+  {
+    "id": 15,
+    "name": "Complex Mixed Structure",
+    "entity": {
+      "metadata": {"created": "2025-01-01", "author": "system"},
+      "components": [
+        {"id": "c1", "dependencies": ["d1", "d2"]},
+        {"id": "c2", "settings": {"mode": "auto"}}
+      ],
+      "relationships": {"parent": "root1", "children": ["child1", "child2"]}
+    }
+  }
+]

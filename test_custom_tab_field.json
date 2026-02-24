@@ -1,0 +1,10 @@
+[
+  {
+    "_config": {
+      "myTabs": [
+        "test_data_projects.json",
+        "test_data_tasks.json"
+      ]
+    }
+  }
+]

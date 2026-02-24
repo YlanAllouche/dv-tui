@@ -1,0 +1,33 @@
+[
+  {
+    "_config": {
+      "triggers": {
+        "table": {
+          "on_enter": "echo 'Table entered: $_config'",
+          "data": "table",
+          "async": true
+        },
+        "rows": {
+          "focus": {
+            "on_select": "echo 'Focus row selected'",
+            "data": "row"
+          }
+        },
+        "cells": {
+          "type": {
+            "on_change": "echo 'Type cell changed'",
+            "data": "cell"
+          }
+        }
+      }
+    },
+    "type": "work",
+    "status": "focus",
+    "summary": "Test row-level trigger (focus status)"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "summary": "Test cell-level trigger (type field)"
+  }
+]

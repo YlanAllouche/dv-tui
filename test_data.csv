@@ -1,0 +1,4 @@
+type,status,summary,priority
+work,active,Write documentation,high
+work,pending,Fix bugs in refresh system,medium
+study,active,Learn async/await patterns,low

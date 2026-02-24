@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "User Management",
+    "metadata": {
+      "created": "2025-01-01",
+      "priority": "high",
+      "owner": "Alice"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Analytics Dashboard",
+    "metadata": {
+      "created": "2025-01-15",
+      "priority": "medium",
+      "owner": "Bob"
+    }
+  },
+  {
+    "id": 3,
+    "name": "API Gateway",
+    "metadata": {
+      "created": "2025-02-01",
+      "priority": "critical",
+      "owner": "Charlie"
+    }
+  }
+]

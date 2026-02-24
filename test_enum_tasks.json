@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "summary": "Implement login feature",
+    "status": "todo",
+    "priority": "high"
+  },
+  {
+    "id": 2,
+    "summary": "Fix navigation bug",
+    "status": "in-progress",
+    "priority": "critical"
+  },
+  {
+    "id": 3,
+    "summary": "Add unit tests",
+    "status": "todo",
+    "priority": "medium"
+  },
+  {
+    "id": 4,
+    "summary": "Update documentation",
+    "status": "done",
+    "priority": "low"
+  },
+  {
+    "id": 5,
+    "summary": "Optimize database queries",
+    "status": "in-progress",
+    "priority": "high"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "_config": {
+      "enum": {
+        "status": {
+          "source": "inline",
+          "values": ["focus", "active", "pending", "done", "blocked"]
+        },
+        "priority": {
+          "source": "inline",
+          "values": ["high", "medium", "low"]
+        }
+      }
+    },
+    "type": "work",
+    "status": "focus",
+    "priority": "high",
+    "summary": "Test inline enum values"
+  },
+  {
+    "type": "study",
+    "status": "active",
+    "priority": "medium",
+    "summary": "Enums should provide predefined values"
+  },
+  {
+    "type": "work",
+    "status": "pending",
+    "priority": "low",
+    "summary": "Multiple enum fields supported"
+  }
+]

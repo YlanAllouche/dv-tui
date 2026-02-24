@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1001",
+    "name": "Task: Fix authentication bug",
+    "status": "active",
+    "priority": "high",
+    "assignee": "alice",
+    "hours_estimate": 4
+  },
+  {
+    "id": "1002",
+    "name": "Task: Update documentation",
+    "status": "pending",
+    "priority": "medium",
+    "assignee": "bob",
+    "hours_estimate": 2
+  },
+  {
+    "id": "1003",
+    "name": "Task: Refactor API endpoints",
+    "status": "in_progress",
+    "priority": "high",
+    "assignee": "charlie",
+    "hours_estimate": 8
+  },
+  {
+    "id": "1004",
+    "name": "Task: Add unit tests",
+    "status": "pending",
+    "priority": "low",
+    "assignee": null,
+    "hours_estimate": 6
+  },
+  {
+    "id": "1005",
+    "name": "Task: Deploy to production",
+    "status": "active",
+    "priority": "critical",
+    "assignee": "alice",
+    "hours_estimate": 1
+  }
+]
