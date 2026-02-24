@@ -23,7 +23,23 @@ from .utils import beautify_filename, sanitize_display_string
 
 @dataclass
 class Tab:
-    """Tab state management with data, selection, and scroll state."""
+    """
+    Tab state management with data, selection, and scroll state.
+    
+    Attributes:
+        name: Display name for the tab
+        source: Source identifier (file path or "inline")
+        data: List of data items for this tab
+        table: Table object for rendering
+        selected_index: Currently selected row index
+        scroll_offset: Scroll position for viewport
+        selection_mode: Selection mode ('row' or 'cell')
+        selected_column: Currently selected column index (cell mode)
+        last_mtime: Last modification time for file tracking
+        config: Configuration for this tab
+        parent_context: Parent data context for triggers/actions
+        navigation_stack: Stack for drill-down navigation history
+    """
     
     name: str
     source: str
@@ -40,10 +56,27 @@ class Tab:
 
 
 class TUI:
-    """TUI engine with curses wrapper."""
+    """
+    TUI engine with curses wrapper.
+    
+    Main class for running dv-tui with curses interface. Handles file loading,
+    tab management, user input, and rendering.
+    """
     
     def __init__(self, files: List[str], single_select: bool = False, config: Optional[Config] = None, 
                  config_path: Optional[str] = None, delimiter: str = ',', skip_headers: bool = False, tab_field: str = '_config.tabs'):
+        """
+        Initialize TUI with files and configuration.
+        
+        Args:
+            files: List of file paths to load
+            single_select: Exit after selection (default: False)
+            config: Custom configuration (optional)
+            config_path: Path to external config file (optional)
+            delimiter: CSV delimiter (default: ',')
+            skip_headers: Skip CSV headers (default: False)
+            tab_field: Field name for tabs config in JSON (default: '_config.tabs')
+        """
         self.files = files
         self.active_tab = 0
         self.single_select = single_select
@@ -149,7 +182,14 @@ class TUI:
         tab.table.selected_column = tab.selected_column
     
     def check_and_reload(self) -> bool:
-        """Check if file has been modified and reload if necessary."""
+        """
+        Check if file has been modified and reload if necessary.
+        
+        Checks file modification time with cooldown to prevent excessive reloading.
+        
+        Returns:
+            True if file was reloaded, False otherwise
+        """
         current_time = time.time()
         
         if current_time - self.last_check_time < self.check_cooldown:
@@ -169,6 +209,9 @@ class TUI:
     def refresh_data(self, show_warning: bool = True) -> bool:
         """
         Refresh data from the current data source.
+        
+        Reloads data from the current tab's data loader, supporting
+        command-based refresh and file-based sources.
         
         Args:
             show_warning: Whether to show a warning message if refresh is not supported
@@ -286,7 +329,12 @@ class TUI:
         self.key_handler.register_handler(ord('P'), leader_p_handler)
     
     def _handle_enum_picker(self) -> None:
-        """Handle ctrl-e to open enum picker dialog."""
+        """
+        Handle ctrl-e to open enum picker dialog.
+        
+        Opens a popup dialog allowing user to select from enum options
+        for the current cell. Only works in cell mode with enum config.
+        """
         self.debug_file.write(f"_handle_enum_picker called\n")
         self.debug_file.flush()
         
@@ -350,7 +398,15 @@ class TUI:
             self._trigger_enum_change_event(field_name, selected_value)
     
     def _handle_enum_cycle(self, key: int) -> None:
-        """Handle e/E keys to cycle through enum values in current cell."""
+        """
+        Handle e/E keys to cycle through enum values in current cell.
+        
+        Cycles through enum options for the current cell. 'e' cycles to next,
+        'E' cycles to previous. Only works in cell mode with enum config.
+        
+        Args:
+            key: Key code (ord('e') or ord('E'))
+        """
         if not self.current_tab or not self.table:
             return
         
@@ -407,7 +463,16 @@ class TUI:
         self._trigger_enum_change_event(field_name, new_value)
     
     def _trigger_enum_change_event(self, field_name: str, new_value: Any) -> None:
-        """Trigger enum change event if configured."""
+        """
+        Trigger enum change event if configured.
+        
+        Fires the on_navigate_cell trigger when an enum value is changed,
+        providing context about the field and new value.
+        
+        Args:
+            field_name: Name of the field that changed
+            new_value: New value selected for the field
+        """
         if not self.current_tab or not self.current_tab.config:
             return
         
@@ -427,7 +492,15 @@ class TUI:
                 self.key_handler._execute_trigger_event("on_navigate_cell", self.table, async_exec=False)
     
     def _build_trigger_context(self) -> Dict[str, Any]:
-        """Build trigger context dictionary."""
+        """
+        Build trigger context dictionary.
+        
+        Creates a dictionary with current selection state for use in trigger
+        execution. Includes selected index, column, row, and cell values.
+        
+        Returns:
+            Dictionary with trigger context variables
+        """
         if not self.table or not self.current_tab:
             return {}
         

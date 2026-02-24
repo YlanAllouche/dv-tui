@@ -50,7 +50,15 @@ class DataLoader(ABC):
 
 
 def union_keys(data: List[Dict[str, Any]]) -> List[str]:
-    """Get union of all keys from all dictionaries in data."""
+    """
+    Get union of all keys from all dictionaries in data.
+    
+    Args:
+        data: List of dictionaries
+        
+    Returns:
+        Sorted list of all unique keys across all dictionaries
+    """
     keys = set()
     for item in data:
         keys.update(item.keys())
@@ -58,7 +66,18 @@ def union_keys(data: List[Dict[str, Any]]) -> List[str]:
 
 
 def fill_missing_keys(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Fill missing keys with empty strings, converting None to empty string."""
+    """
+    Fill missing keys with empty strings, converting None to empty string.
+    
+    Ensures all dictionaries have the same keys by filling missing ones
+    with empty strings and converting None values to empty strings.
+    
+    Args:
+        data: List of dictionaries
+        
+    Returns:
+        List of dictionaries with all keys filled
+    """
     if not data:
         return data
     
@@ -315,7 +334,15 @@ class StdinDataLoader(DataLoader):
 
 
 def get_file_mtime(file_path: str) -> Optional[float]:
-    """Get the modification time of a file."""
+    """
+    Get modification time of a file.
+    
+    Args:
+        file_path: Path to the file
+        
+    Returns:
+        Modification time as timestamp, or None if file doesn't exist
+    """
     try:
         return Path(file_path).stat().st_mtime
     except (FileNotFoundError, OSError):
@@ -396,7 +423,12 @@ def create_loader(source: str, stdin_timeout: Optional[float] = None,
 
 
 def is_stdin_available() -> bool:
-    """Check if stdin has actual data available (piped, not TTY or /dev/null)."""
+    """
+    Check if stdin has actual data available (piped, not TTY or /dev/null).
+    
+    Returns:
+        True if stdin has piped data available, False otherwise
+    """
     import select
     
     # If stdin is a TTY (interactive terminal), no data
@@ -420,6 +452,11 @@ def detect_source(files: List[str]) -> str:
     """
     Detect data source from command-line arguments.
     
+    Determines whether input should come from files, stdin, or inline JSON.
+    
+    Args:
+        files: List of file arguments from command line
+        
     Returns:
         'file', 'stdin', or 'inline'
     """
