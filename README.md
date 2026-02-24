@@ -49,6 +49,19 @@ pip install -e .
 dv --help
 ```
 
+## Dependencies
+
+dv-tui has **no external dependencies** - it uses only Python standard library modules:
+- `curses` - Terminal UI (included with Python on most systems)
+- `json` - JSON parsing
+- `csv` - CSV parsing
+- `argparse` - Command line argument parsing
+
+On some Linux distributions, you may need to install curses separately:
+- Ubuntu/Debian: `sudo apt-get install python3-curses`
+- Fedora: `sudo dnf install python3-curses`
+- macOS: Included with Python
+
 ## Usage
 
 ### Command Line
