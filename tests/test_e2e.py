@@ -252,14 +252,16 @@ def test_e2e_csv_with_different_delimiters():
 
 
 def test_e2e_stdin_data_loading():
-    """Test loading data from stdin with command."""
+    """Test command-based data loading (stdin refresh functionality)."""
     from dv_tui.data_loaders import StdinDataLoader
     
-    with patch('subprocess.run') as mock_run:
+    with patch('dv_tui.data_loaders.subprocess.run') as mock_run:
         mock_run.return_value = MagicMock(stdout=json.dumps([{"test": "data"}]))
         
         loader = StdinDataLoader(command="echo 'test'")
-        data = loader.load()
+        
+        # Test refresh which uses _load_from_command
+        data = loader.refresh()
         
         assert len(data) == 1
         assert data[0]["test"] == "data"
