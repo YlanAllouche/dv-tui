@@ -574,53 +574,9 @@ if __name__ == "__main__":
         print("Error: No input file provided", file=sys.stderr)
         print("Usage: dv <file.json>", file=sys.stderr)
         sys.exit(1)
-        
-        def select_file(stdscr):
-            selected = 0
-            curses.curs_set(0)
-            stdscr.keypad(True)
-            
-            while True:
-                stdscr.clear()
-                height, width = stdscr.getmaxyx()
-                
-                # Title
-                title = f"{len(json_file_list)} files in ~/share/_tmp/"
-                stdscr.addstr(0, 0, title, curses.A_BOLD)
-                
-                # Display files with beautified names
-                visible_items = min(len(json_file_list), height - 3)
-                for i in range(visible_items):
-                    if i >= len(json_file_list):
-                        break
-                    
-                    beautified = beautify_filename(json_file_list[i].name)
-                    line_text = f"{beautified}"
-                    
-                    if i == selected:
-                        stdscr.addstr(i + 2, 2, line_text, curses.A_REVERSE)
-                    else:
-                        stdscr.addstr(i + 2, 2, line_text)
-                
-                key = stdscr.getch()
-                
-                if key == ord('q') or key == ord('Q'):
-                    return None
-                elif key == curses.KEY_UP or key == ord('k'):
-                    selected = max(0, selected - 1)
-                elif key == curses.KEY_DOWN or key == ord('j'):
-                    selected = min(len(json_file_list) - 1, selected + 1)
-                elif key == ord('\n') or key == curses.KEY_ENTER or key == 10:
-                    return str(json_file_list[selected])
-        
-        selected_file = curses.wrapper(select_file)
-        if selected_file is None:
-            sys.exit(0)
-        
-        json_files = [selected_file]
-    else:
-        # Accept multiple JSON files as arguments
-        json_files = sys.argv[1:]
+    
+    # Accept multiple JSON files as arguments
+    json_files = sys.argv[1:]
     
     try:
         tui = SimpleInitiativeTUI(json_files, single_select)
