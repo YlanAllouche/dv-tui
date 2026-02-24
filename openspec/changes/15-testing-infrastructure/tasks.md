@@ -1,22 +1,22 @@
 ## 1. Implementation
-- [ ] 1.1 Set up pytest framework
-- [ ] 1.2 Create tests/ directory structure
-- [ ] 1.3 Create tests/test_config.py
-- [ ] 1.4 Create tests/test_data_loaders.py
-- [ ] 1.5 Create tests/test_fuzzy_match.py
-- [ ] 1.6 Create tests/test_triggers.py
-- [ ] 1.7 Create tests/test_clipboard.py
-- [ ] 1.8 Implement unit tests for config loading
-- [ ] 1.9 Implement unit tests for data loaders
-- [ ] 1.10 Implement unit tests for fuzzy match
-- [ ] 1.11 Implement unit tests for triggers
-- [ ] 1.12 Implement unit tests for clipboard
-- [ ] 1.13 Create curses mocking utilities
-- [ ] 1.14 Create E2E test for basic table display
-- [ ] 1.15 Create E2E test for multi-tab navigation
-- [ ] 1.16 Create E2E test for search and filter
-- [ ] 1.17 Create E2E test for cell/row selection modes
-- [ ] 1.18 Create E2E test for drill-down into nested arrays
-- [ ] 1.19 Create E2E test for trigger execution
-- [ ] 1.20 Create E2E test for CSV parsing
-- [ ] 1.21 Create E2E test for config merging
+- [x] 1.1 Set up pytest framework
+- [x] 1.2 Create tests/ directory structure
+- [x] 1.3 Create tests/test_config.py
+- [x] 1.4 Create tests/test_data_loaders.py
+- [x] 1.5 Create tests/test_fuzzy_match.py
+- [x] 1.6 Create tests/test_triggers.py
+- [x] 1.7 Create tests/test_clipboard.py
+- [x] 1.8 Implement unit tests for config loading
+- [x] 1.9 Implement unit tests for data loaders
+- [x] 1.10 Implement unit tests for fuzzy match
+- [x] 1.11 Implement unit tests for triggers
+- [x] 1.12 Implement unit tests for clipboard
+- [x] 1.13 Create curses mocking utilities
+- [x] 1.14 Create E2E test for basic table display
+- [x] 1.15 Create E2E test for multi-tab navigation
+- [x] 1.16 Create E2E test for search and filter
+- [x] 1.17 Create E2E test for cell/row selection modes
+- [x] 1.18 Create E2E test for drill-down into nested arrays
+- [x] 1.19 Create E2E test for trigger execution
+- [x] 1.20 Create E2E test for CSV parsing
+- [x] 1.21 Create E2E test for config merging
