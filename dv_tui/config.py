@@ -578,11 +578,8 @@ class ModeKeybinds:
 @dataclass
 class ColorsConfig:
     """Color configuration."""
-    type: Dict[str, Any] = field(default_factory=lambda: {"work": (5, True), "study": (6, True)})
-    status: Dict[str, Any] = field(default_factory=lambda: {
-        "focus": (2, True),
-        "active": (3, True),
-    })
+    type: Dict[str, Any] = field(default_factory=dict)
+    status: Dict[str, Any] = field(default_factory=dict)
     date: Dict[str, Any] = field(default_factory=lambda: {"prefix": "2025-", "color": 4})
     
     def to_dict(self) -> Dict[str, Any]:
@@ -597,8 +594,8 @@ class ColorsConfig:
 @dataclass
 class ColumnWidthsConfig:
     """Column widths configuration."""
-    type: int = 8
-    status: int = 12
+    type: int = 10
+    status: int = 10
     summary: Optional[int] = None
     
     def to_dict(self) -> Dict[str, int]:
@@ -913,7 +910,7 @@ def load_config(
     
     result = Config()
     
-    if "columns" in config and config["columns"] != ["type", "status", "summary"]:
+    if "columns" in config:
         result.columns = config["columns"]
     
     if "column_widths" in config:

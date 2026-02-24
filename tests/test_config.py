@@ -282,8 +282,13 @@ def test_color_config():
     from dv_tui.config import ColorsConfig, ColumnWidthsConfig
     
     colors = ColorsConfig()
-    assert "work" in colors.type
-    assert colors.type["work"] == (5, True)
+    # Colors are now empty by default (no hardcoded mappings)
+    assert colors.type == {}
+    assert colors.status == {}
+    
+    # Can still set custom colors
+    custom_colors = ColorsConfig(type={"work": (5, True)})
+    assert custom_colors.type["work"] == (5, True)
     
     widths = ColumnWidthsConfig(type=15, status=20)
     result = widths.to_dict()

@@ -17,7 +17,7 @@ from .data_loaders import (
     create_loader, detect_source
 )
 from .ui import init_color_pairs, draw_tabs, draw_footer, EnumChoiceDialog, get_enum_options
-from .actions import select_item, play_locator
+from .actions import select_item
 from .utils import beautify_filename, sanitize_display_string
 
 
@@ -102,10 +102,6 @@ class TUI:
         self.terminal_height = 0
         self.stdscr = None
         self.output_file = None
-        
-        self.debug_file = open('/tmp/dv_keys.txt', 'a')
-        self.debug_file.write("=== Session Start ===\n")
-        self.debug_file.flush()
     
     @property
     def current_tab(self) -> Tab:
@@ -312,21 +308,7 @@ class TUI:
     
     def _setup_custom_handlers(self) -> None:
         """Setup custom key handlers."""
-        def ctrl_p_handler(key):
-            if key == 16:
-                if 0 <= self.table.selected_index < len(self.data):
-                    play_locator(self.data[self.table.selected_index])
-            return None
-        
-        def leader_p_handler(key):
-            if self.key_handler.leader_pending and (key == ord('p') or key == ord('P')):
-                if 0 <= self.table.selected_index < len(self.data):
-                    play_locator(self.data[self.table.selected_index])
-            return None
-        
-        self.key_handler.register_handler(16, ctrl_p_handler)
-        self.key_handler.register_handler(ord('p'), leader_p_handler)
-        self.key_handler.register_handler(ord('P'), leader_p_handler)
+        pass
     
     def _handle_enum_picker(self) -> None:
         """
@@ -335,18 +317,11 @@ class TUI:
         Opens a popup dialog allowing user to select from enum options
         for the current cell. Only works in cell mode with enum config.
         """
-        self.debug_file.write(f"_handle_enum_picker called\n")
-        self.debug_file.flush()
-        
         if not self.current_tab or not self.table:
-            self.debug_file.write(f"  SKIPPED: no current_tab or table\n")
-            self.debug_file.flush()
             return
         
         # Only work in cell mode with enum config for current column
         if self.table.selection_mode != 'cell' or self.table.selected_column >= len(self.table.columns):
-            self.debug_file.write(f"  SKIPPED: mode={self.table.selection_mode}, col={self.table.selected_column}/{len(self.table.columns)}\n")
-            self.debug_file.flush()
             return
         
         field_name = self.table.columns[self.table.selected_column]
@@ -356,8 +331,6 @@ class TUI:
             enum_config = getattr(self.current_tab.config.enum, field_name, None)
         
         if not enum_config:
-            self.debug_file.write(f"  SKIPPED: no enum_config for {field_name}\n")
-            self.debug_file.flush()
             return
         
         # Build context for external commands
@@ -372,12 +345,7 @@ class TUI:
         options = get_enum_options(enum_config, field_name, self.current_tab.data, context)
         
         if not options:
-            self.debug_file.write(f"  SKIPPED: no options\n")
-            self.debug_file.flush()
             return
-        
-        self.debug_file.write(f"  Showing picker for {field_name} with options: {options}\n")
-        self.debug_file.flush()
         
         # Re-render the main window before showing dialog
         self.stdscr.clear()
@@ -386,9 +354,6 @@ class TUI:
         # Show enum picker dialog
         dialog = EnumChoiceDialog(self.stdscr, options, f"Select {field_name}")
         selected_value = dialog.show()
-        
-        self.debug_file.write(f"  Picker returned: {selected_value}\n")
-        self.debug_file.flush()
         
         if selected_value is not None:
             # Update cell value
@@ -771,9 +736,6 @@ class TUI:
     
     def render(self) -> None:
         """Render the TUI."""
-        self.debug_file.write(f"render() called\n")
-        self.debug_file.flush()
-        
         self.stdscr.clear()
         
         height, width = self.stdscr.getmaxyx()
@@ -783,12 +745,7 @@ class TUI:
         start_y = 2
         
         if not self.table:
-            self.debug_file.write(f"render() returning early: no table\n")
-            self.debug_file.flush()
             return
-        
-        self.debug_file.write(f"render() proceeding normally\n")
-        self.debug_file.flush()
         
         columns = self.table.columns
         headers = [c.capitalize() for c in columns]
@@ -860,23 +817,15 @@ class TUI:
                 
                 is_drillable = self.table.is_drillable(item_index, col_idx)
                 
-                if is_drillable:
-                    named_array_label = self._get_named_array_label(value)
-                    if named_array_label:
-                        display_str = named_array_label.ljust(col_width)
-                    else:
-                        drill_indicator = "[]" if isinstance(value, list) else "{}"
-                        if col == "type" and isinstance(value, int):
-                            minutes = round(value / 60)
-                            display_str = f"{minutes}m{drill_indicator}".ljust(col_width)
-                        else:
-                            display_str = drill_indicator.ljust(col_width)
+            if is_drillable:
+                named_array_label = self._get_named_array_label(value)
+                if named_array_label:
+                    display_str = named_array_label.ljust(col_width)
                 else:
-                    if col == "type" and isinstance(value, int):
-                        minutes = round(value / 60)
-                        display_str = f"{minutes}m".ljust(col_width)
-                    else:
-                        display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
+                    drill_indicator = "[]" if isinstance(value, list) else "{}"
+                    display_str = drill_indicator.ljust(col_width)
+            else:
+                display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
                 
                 is_cell_selected = (self.table.selection_mode == 'cell' and 
                                     is_selected and 
@@ -895,16 +844,8 @@ class TUI:
                     except curses.error:
                         pass
                 else:
-                    color = curses.A_NORMAL
-                    if col == "type":
-                        color = self.table.get_type_color(value)
-                    elif col == "status":
-                        color = self.table.get_status_color(value)
-                        if color == curses.A_NORMAL:
-                            color = self.table.get_dynamic_color("status", str(value))
-                    else:
-                        # Use enum color cycling for enum fields
-                        color = self.table.get_enum_color(col, str(value))
+                    # Use enum color cycling for enum fields
+                    color = self.table.get_enum_color(col, str(value))
                     
                     if is_drillable:
                         color = color | curses.A_BOLD
@@ -958,52 +899,24 @@ class TUI:
             )
         
         while True:
-            self.debug_file.write(f"Loop start\n")
-            self.debug_file.flush()
-            
             self.check_and_reload()
-            self.debug_file.write(f"After check_and_reload\n")
-            self.debug_file.flush()
-            
             self._check_auto_refresh()
-            self.debug_file.write(f"After auto_refresh check\n")
-            self.debug_file.flush()
-            
             self.render()
-            self.debug_file.write(f"After render\n")
-            self.debug_file.flush()
-            
             key = stdscr.getch()
-            
-            self.debug_file.write(f"Key: {key:4d}\n")
-            self.debug_file.flush()
             
             if key == -1:
                 self.key_handler.update_leader_timeout()
                 continue
             
-            self.debug_file.write(f"Processing key {key}\n")
-            self.debug_file.flush()
-            
             if self.key_handler.is_left_key(key) and self.table.selection_mode != 'cell':
-                self.debug_file.write(f"  -> is_left_key, mode={self.table.selection_mode}\n")
-                self.debug_file.flush()
                 self.tab_left()
             elif self.key_handler.is_right_key(key) and self.table.selection_mode != 'cell':
-                self.debug_file.write(f"  -> is_right_key, mode={self.table.selection_mode}\n")
-                self.debug_file.flush()
                 self.tab_right()
             elif self.key_handler.is_escape_key(key) and self.current_tab and len(self.current_tab.navigation_stack) > 0:
-                self.debug_file.write(f"  -> is_escape_key, nav_stack={len(self.current_tab.navigation_stack)}\n")
-                self.debug_file.flush()
                 self.go_back()
             elif self.key_handler.is_enum_picker_key(key):
-                self.debug_file.write(f"  -> is_enum_picker_key\n")
-                self.debug_file.flush()
                 self._handle_enum_picker()
             elif self.key_handler.is_enum_cycle_next_key(key) or self.key_handler.is_enum_cycle_prev_key(key):
-                self.debug_file.write(f"  -> is_enum_cycle_key\n")
-                self.debug_file.flush()
                 self._handle_enum_cycle(key)
             else:
                 should_exit, selected_item = self.key_handler.handle_key(key, self.table, self.terminal_height)
@@ -1024,8 +937,5 @@ class TUI:
                     
                     break
         
-        self.debug_file.write(f"Loop exiting normally\n")
-        self.debug_file.flush()
-        self.debug_file.close()
         self.cleanup_curses()
         return self.selected_output

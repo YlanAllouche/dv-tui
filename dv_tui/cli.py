@@ -39,7 +39,7 @@ Examples:
     parser.add_argument(
         "files",
         nargs="*",
-        help="JSON/CSV files to view (if no files, prompt from ~/share/_tmp/)"
+        help="JSON/CSV files to view"
     )
     
     parser.add_argument(
@@ -241,7 +241,13 @@ def main(args: Optional[List[str]] = None) -> int:
         # Allow no files when using -c command
         if not parsed_args.command:
             print("Error: No input file provided", file=sys.stderr)
-            print("Usage: dv <file.json>", file=sys.stderr)
+            print("Usage: dv <file.json> [file2.json ...]", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  dv file.json                    # View JSON file", file=sys.stderr)
+            print("  dv file1.json file2.json        # Multiple files as tabs", file=sys.stderr)
+            print("  dv -s file.json                 # Single-select mode", file=sys.stderr)
+            print("  cat data.json | dv              # Read from stdin", file=sys.stderr)
+            print("  dv -c 'query.sh'                # Use command for data", file=sys.stderr)
             return 1
         files = ["stdin"]  # Use stdin as placeholder
     
@@ -294,6 +300,14 @@ def main(args: Optional[List[str]] = None) -> int:
         def run_tui(stdscr):
             try:
                 return tui.run(stdscr)
+            except FileNotFoundError as e:
+                tui.cleanup_curses()
+                print(f"Error: File not found - {e.filename}", file=sys.stderr)
+                return None
+            except json.JSONDecodeError as e:
+                tui.cleanup_curses()
+                print(f"Error: Invalid JSON in file - {e}", file=sys.stderr)
+                return None
             except KeyboardInterrupt:
                 tui.cleanup_curses()
                 return None
@@ -367,6 +381,17 @@ def main(args: Optional[List[str]] = None) -> int:
     except BrokenPipeError:
         # Silently handle broken pipe (when piping to jq/other commands)
         return 0
+    except FileNotFoundError as e:
+        print(f"Error: File not found - {e.filename}", file=sys.stderr)
+        print(f"Please check the file path and try again.", file=sys.stderr)
+        return 1
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in file - {e}", file=sys.stderr)
+        print(f"Please check the JSON syntax.", file=sys.stderr)
+        return 1
+    except OSError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1

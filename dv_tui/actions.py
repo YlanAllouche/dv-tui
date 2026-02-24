@@ -214,30 +214,6 @@ def select_item(item: Dict[str, Any], single_select: bool = False) -> bool:
     return False
 
 
-def play_locator(item: Dict[str, Any]) -> None:
-    """Run jelly_play_yt on the content of the 'locator' field."""
-    locator = item.get("locator", "")
-    if not locator:
-        return
-    
-    with open('/tmp/dv_play.log', 'a') as f:
-        f.write(f"play_locator called. Locator: '{locator}'\n")
-    
-    cmd = [str(Path.home() / ".local" / "bin" / "jelly_play_yt"), str(locator)]
-    with open('/tmp/dv_play.log', 'a') as f:
-        f.write(f"  -> Running: {' '.join(cmd)}\n")
-    
-    try:
-        subprocess.Popen(cmd,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       start_new_session=True, close_fds=True)
-        with open('/tmp/dv_play.log', 'a') as f:
-            f.write(f"  -> Process spawned\n")
-    except Exception as e:
-        with open('/tmp/dv_play.log', 'a') as f:
-            f.write(f"  -> Error: {e}\n")
-
-
 def copy_to_clipboard(text: str) -> None:
     """Copy text to system clipboard."""
     _global_clipboard.copy(text)
