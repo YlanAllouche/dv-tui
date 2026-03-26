@@ -382,7 +382,7 @@ class TestLoadFile:
             data = [{"a": 1, "b": 2}]
             os.write(w, json.dumps(data).encode())
             os.close(w)
-            sys.exit(0)
+            os._exit(0)
         else:
             # Parent process: read from file descriptor
             os.close(w)
@@ -476,7 +476,7 @@ class TestCreateLoader:
             data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
             os.write(w, json.dumps(data).encode())
             os.close(w)
-            sys.exit(0)
+            os._exit(0)
         else:
             # Parent process: read from file descriptor
             os.close(w)

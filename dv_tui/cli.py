@@ -31,6 +31,7 @@ Examples:
   dv -s file.json                 # Single-select mode
   dv --config myconfig.json       # Use custom config
   dv --columns "name,status"       # Filter columns
+  dv --on-enter "edit.sh"          # Global Enter trigger
   dv --stdin-timeout 60           # Read from stdin with 60s timeout
   dv -c "query.sh"                 # Use command for data (with refresh)
         """
@@ -67,6 +68,22 @@ Examples:
         type=str,
         default=None,
         help="Comma-separated list of columns to display (e.g., 'type,status')"
+    )
+
+    on_enter_group = parser.add_mutually_exclusive_group()
+
+    on_enter_group.add_argument(
+        "--on-enter",
+        type=str,
+        default=None,
+        help="Global table-level on_enter trigger command (applies to all tabs)"
+    )
+
+    on_enter_group.add_argument(
+        "--on-enter-json",
+        type=str,
+        default=None,
+        help="Global table-level on_enter trigger as JSON object (e.g. '{\"command\":\"...\",\"async_\":false}')"
     )
     
     parser.add_argument(
@@ -156,6 +173,18 @@ def get_cli_config(args: argparse.Namespace) -> Dict[str, Any]:
     
     if args.columns:
         cli_config["columns"] = [c.strip() for c in args.columns.split(",")]
+
+    if getattr(args, "on_enter", None):
+        cli_config.setdefault("triggers", {}).setdefault("table", {})["on_enter"] = args.on_enter
+
+    if getattr(args, "on_enter_json", None):
+        try:
+            parsed = json.loads(args.on_enter_json)
+        except json.JSONDecodeError as e:
+            raise Exception(f"Invalid JSON for --on-enter-json: {e}")
+        if not isinstance(parsed, dict):
+            raise Exception("--on-enter-json must be a JSON object")
+        cli_config.setdefault("triggers", {}).setdefault("table", {})["on_enter"] = parsed
     
     if args.stdin_timeout is not None:
         cli_config["stdin_timeout"] = args.stdin_timeout
@@ -286,7 +315,13 @@ def main(args: Optional[List[str]] = None) -> int:
         config.stdin_timeout = parsed_args.stdin_timeout
     
     try:
-        tui = TUI(files, single_select=config.single_select, config=config, tab_field=tab_field)
+        tui = TUI(
+            files,
+            single_select=config.single_select,
+            config=config,
+            tab_field=tab_field,
+            cli_config=cli_config,
+        )
         
         # For single_select mode, create a temp file for output
         # This bypasses curses stdout interference

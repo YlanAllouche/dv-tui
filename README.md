@@ -97,6 +97,12 @@ Custom column display:
 dv --columns "name,status,age" file.json
 ```
 
+Global on-enter trigger:
+
+```bash
+dv --on-enter "open_task.sh $DV_SELECTED_INDEX" file.json
+```
+
 Auto-refresh from command:
 
 ```bash

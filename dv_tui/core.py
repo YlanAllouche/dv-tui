@@ -10,7 +10,13 @@ from dataclasses import dataclass, field
 
 from .table import Table
 from .handlers import KeyHandler, Mode
-from .config import Config, load_config, load_config_from_inline_json, get_column_widths
+from .config import (
+    Config,
+    load_config,
+    load_config_from_inline_json,
+    load_config_from_inline_json_file,
+    get_column_widths,
+)
 from .data_loaders import (
     load_file, get_file_mtime,
     DataLoader, JsonDataLoader, CsvDataLoader, StdinDataLoader,
@@ -63,8 +69,17 @@ class TUI:
     tab management, user input, and rendering.
     """
     
-    def __init__(self, files: List[str], single_select: bool = False, config: Optional[Config] = None, 
-                 config_path: Optional[str] = None, delimiter: str = ',', skip_headers: bool = False, tab_field: str = '_config.tabs'):
+    def __init__(
+        self,
+        files: List[str],
+        single_select: bool = False,
+        config: Optional[Config] = None,
+        config_path: Optional[str] = None,
+        delimiter: str = ',',
+        skip_headers: bool = False,
+        tab_field: str = '_config.tabs',
+        cli_config: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize TUI with files and configuration.
         
@@ -85,6 +100,9 @@ class TUI:
         self.tab_field = tab_field
         self.tab_name = config.tab_name if config else None
         self.selected_output = None
+
+        # Raw CLI config dict (used to re-apply CLI precedence when per-tab inline config exists)
+        self.cli_config: Dict[str, Any] = cli_config or {}
         
         self.tabs: List[Tab] = []
         self.last_check_time = 0
@@ -95,7 +113,7 @@ class TUI:
         self.loaders: List[DataLoader] = []
         
         if config is None:
-            self.config = load_config(config_path=config_path)
+            self.config = load_config(config_path=config_path, cli_config=self.cli_config)
         else:
             self.config = config
         
@@ -155,12 +173,27 @@ class TUI:
         
         tab.data = loader.load()
         
-        inline_config = load_config_from_inline_json(tab.data)
+        inline_config: Dict[str, Any] = {}
+
+        # Prefer extracting inline config from the source JSON file before data filtering.
+        # This enables per-tab inline config without displaying the _config item.
+        current_file = self.current_file
+        is_fd_path = (
+            current_file.startswith('/dev/fd/')
+            or current_file.startswith('/proc/self/fd/')
+            or (current_file.startswith('/proc/') and '/fd/' in current_file)
+        )
+
+        if (not is_fd_path) and current_file.lower().endswith('.json'):
+            inline_config = load_config_from_inline_json_file(current_file)
+        else:
+            inline_config = load_config_from_inline_json(tab.data)
+
         if inline_config:
             tab_config = load_config(
                 config_path=self.config.config_file,
                 inline_config=inline_config,
-                cli_config={},
+                cli_config=self.cli_config,
             )
             tab.config = tab_config
         else:
@@ -232,12 +265,25 @@ class TUI:
             tab = self.tabs[self.active_tab]
             tab.data = loader.refresh()
             
-            inline_config = load_config_from_inline_json(tab.data)
+            inline_config: Dict[str, Any] = {}
+
+            current_file = self.current_file
+            is_fd_path = (
+                current_file.startswith('/dev/fd/')
+                or current_file.startswith('/proc/self/fd/')
+                or (current_file.startswith('/proc/') and '/fd/' in current_file)
+            )
+
+            if (not is_fd_path) and current_file.lower().endswith('.json'):
+                inline_config = load_config_from_inline_json_file(current_file)
+            else:
+                inline_config = load_config_from_inline_json(tab.data)
+
             if inline_config:
                 tab_config = load_config(
                     config_path=self.config.config_file,
                     inline_config=inline_config,
-                    cli_config={},
+                    cli_config=self.cli_config,
                 )
                 tab.config = tab_config
             else:

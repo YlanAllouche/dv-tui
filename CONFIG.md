@@ -673,6 +673,12 @@ Configuration can be overridden via CLI flags:
 # Override columns
 dv --columns "name,status,priority" data.json
 
+# Global on-enter trigger (all tabs)
+dv --on-enter "open_task.sh $DV_SELECTED_INDEX" data.json
+
+# Global on-enter trigger with full object form
+dv --on-enter-json '{"command":"open_task.sh $DV_SELECTED_INDEX","async_":false}' data.json
+
 # Add keybinding
 dv --bind "v:view_details" data.json
 
