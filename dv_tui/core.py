@@ -862,21 +862,23 @@ class TUI:
                 value = item.get(col, "")
                 
                 is_drillable = self.table.is_drillable(item_index, col_idx)
-                
-            if is_drillable:
-                named_array_label = self._get_named_array_label(value)
-                if named_array_label:
-                    display_str = named_array_label.ljust(col_width)
+
+                if is_drillable:
+                    named_array_label = self._get_named_array_label(value)
+                    if named_array_label:
+                        display_str = named_array_label.ljust(col_width)
+                    else:
+                        drill_indicator = "[]" if isinstance(value, list) else "{}"
+                        display_str = drill_indicator.ljust(col_width)
                 else:
-                    drill_indicator = "[]" if isinstance(value, list) else "{}"
-                    display_str = drill_indicator.ljust(col_width)
-            else:
-                display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
-                
-                is_cell_selected = (self.table.selection_mode == 'cell' and 
-                                    is_selected and 
-                                    col_idx == self.table.selected_column)
-                
+                    display_str = sanitize_display_string(str(value), max_length=col_width - 1).ljust(col_width)
+
+                is_cell_selected = (
+                    self.table.selection_mode == 'cell'
+                    and is_selected
+                    and col_idx == self.table.selected_column
+                )
+
                 if is_selected and self.table.selection_mode == 'row':
                     full_line = display_str + " "
                     try:
@@ -892,15 +894,15 @@ class TUI:
                 else:
                     # Use enum color cycling for enum fields
                     color = self.table.get_enum_color(col, str(value))
-                    
+
                     if is_drillable:
                         color = color | curses.A_BOLD
-                    
+
                     try:
                         self.stdscr.addstr(y, x, display_str, color)
                     except curses.error:
                         pass
-                
+
                 x += col_width + 1
     
     def _render_footer(self, height: int, width: int) -> None:
